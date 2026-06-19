@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dziennik – 5 notatek dziennie</title>
+<style>
+  :root {
+    --bg: #fdf6f0;
+    --bg-soft: #f9ecef;
+    --card: #ffffff;
+    --accent: #e6a4b4;
+    --accent-strong: #c97b8a;
+    --accent-soft: #f7d6dd;
+    --ink: #3a2f33;
+    --ink-soft: #7a6b70;
+    --line: #f0dfe3;
+    --ok: #8ec5a3;
+    --warn: #d98c8c;
+    --shadow: 0 6px 20px rgba(201, 123, 138, 0.12);
+    --radius: 18px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  body {
+    background:
+      radial-gradient(circle at 10% 0%, #fce4ec 0%, transparent 40%),
+      radial-gradient(circle at 90% 100%, #e7f0fb 0%, transparent 45%),
+      var(--bg);
+  }
+
+  .app {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 24px 20px 80px;
+  }
+
+  header.top {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  header.top h1 {
+    margin: 0;
+    font-size: 28px;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+  header.top p {
+    margin: 4px 0 0;
+    color: var(--ink-soft);
+    font-size: 14px;
+  }
+
+  nav.tabs {
+    display: flex;
+    gap: 8px;
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 6px;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+  }
+  nav.tabs button {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--ink-soft);
+    padding: 10px 12px;
+    border-radius: 14px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.15s ease;
+  }
+  nav.tabs button.active {
+    background: var(--accent);
+    color: white;
+    box-shadow: 0 4px 10px rgba(201, 123, 138, 0.25);
+  }
+  nav.tabs button:hover:not(.active) {
+    background: var(--bg-soft);
+    color: var(--ink);
+  }
+
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+  }
+
+  .day-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 16px;
+  }
+  .day-header h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+  }
+  .counter {
+    font-size: 13px;
+    color: var(--ink-soft);
+    background: var(--bg-soft);
+    padding: 4px 10px;
+    border-radius: 999px;
+  }
+  .counter.full { background: var(--accent-soft); color: var(--accent-strong); }
+
+  .note-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .note {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 12px 14px;
+    background: var(--bg-soft);
+    border-radius: 14px;
+    border: 1px solid var(--line);
+  }
+  .note .idx {
+    flex: 0 0 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .note .content {
+    flex: 1;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: 15px;
+    line-height: 1.45;
+  }
+  .note .actions {
+    display: flex;
+    gap: 6px;
+    opacity: 0.7;
+  }
+  .note .actions button {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: var(--ink-soft);
+    font-size: 14px;
+    padding: 4px 6px;
+    border-radius: 6px;
+  }
+  .note .actions button:hover { background: white; color: var(--accent-strong); }
+  .note.readonly { opacity: 0.85; }
+  .note.readonly .actions { display: none; }
+
+  .empty {
+    color: var(--ink-soft);
+    text-align: center;
+    padding: 24px 12px;
+    font-style: italic;
+    font-size: 14px;
+  }
+
+  .composer {
+    margin-top: 16px;
+  }
+  .composer textarea {
+    width: 100%;
+    min-height: 80px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 12px 14px;
+    font: inherit;
+    font-size: 15px;
+    color: var(--ink);
+    background: var(--bg);
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+  .composer textarea:focus { border-color: var(--accent); }
+  .composer textarea:disabled { background: var(--bg-soft); cursor: not-allowed; }
+
+  .composer-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+  }
+  .char-count { font-size: 12px; color: var(--ink-soft); }
+  .char-count.warn { color: var(--warn); }
+
+  button.primary {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(201, 123, 138, 0.25);
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+  }
+  button.primary:hover:not(:disabled) { transform: translateY(-1px); }
+  button.primary:disabled { background: var(--line); color: var(--ink-soft); cursor: not-allowed; box-shadow: none; }
+
+  .notice {
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    margin-top: 12px;
+    text-align: center;
+  }
+
+  /* Calendar */
+  .cal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .cal-header h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    text-transform: capitalize;
+  }
+  .cal-header button {
+    background: var(--bg-soft);
+    border: none;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+    color: var(--ink);
+    transition: background 0.15s ease;
+  }
+  .cal-header button:hover { background: var(--accent-soft); }
+
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+  .cal-grid .dow {
+    text-align: center;
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    padding: 6px 0;
+    letter-spacing: 0.5px;
+  }
+  .cal-day {
+    aspect-ratio: 1;
+    border-radius: 10px;
+    background: var(--bg-soft);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: var(--ink);
+    position: relative;
+    transition: all 0.15s ease;
+  }
+  .cal-day:hover { background: var(--accent-soft); }
+  .cal-day.outside { color: var(--ink-soft); opacity: 0.4; }
+  .cal-day.today {
+    border: 2px solid var(--accent);
+    font-weight: 600;
+  }
+  .cal-day.has-notes {
+    background: var(--accent);
+    color: white;
+  }
+  .cal-day.has-notes:hover { background: var(--accent-strong); }
+  .cal-day .dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: white;
+    margin-top: 2px;
+  }
+  .cal-day.has-notes.full .dot { background: #fff; box-shadow: 0 0 0 2px rgba(255,255,255,0.5); }
+
+  /* Settings */
+  .setting-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .setting-row:last-child { border-bottom: none; }
+  .setting-row label { font-size: 14px; }
+  .setting-row input[type="time"] {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font: inherit;
+  }
+  .setting-row input[type="checkbox"] { transform: scale(1.2); }
+
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(58, 47, 51, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 20px;
+  }
+  .modal {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 22px;
+    max-width: 480px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  }
+  .modal h3 { margin: 0 0 14px; font-size: 18px; }
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 14px;
+  }
+  .modal-actions button {
+    border: none;
+    padding: 9px 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .modal-actions .cancel { background: var(--bg-soft); color: var(--ink); }
+  .modal-actions .save { background: var(--accent); color: white; }
+  .modal-actions .delete { background: var(--warn); color: white; margin-right: auto; }
+
+  footer.bottom {
+    text-align: center;
+    color: var(--ink-soft);
+    font-size: 12px;
+    margin-top: 30px;
+  }
+
+  @media (max-width: 480px) {
+    .app { padding: 16px 12px 60px; }
+    header.top h1 { font-size: 24px; }
+    .card { padding: 16px; }
+    nav.tabs button { font-size: 13px; padding: 9px 8px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top">
+    <h1>Dziennik</h1>
+    <p>5 notatek dziennie · spokojnie, dzień po dniu</p>
+  </header>
+
+  <nav class="tabs">
+    <button data-tab="today" class="active">Dziś</button>
+    <button data-tab="calendar">Kalendarz</button>
+    <button data-tab="settings">Ustawienia</button>
+  </nav>
+
+  <main id="view"></main>
+
+  <footer class="bottom">
+    Dane zapisywane lokalnie w tej przeglądarce.
+  </footer>
+</div>
+
+<script>
+/* ================== Stan i pamięć ================== */
+
+const STORAGE_KEY  = "dziennik.notes.v1";
+const SETTINGS_KEY = "dziennik.settings.v1";
+const MAX_NOTES_PER_DAY = 5;
+const MAX_CHARS = 500;
+const EDIT_WINDOW_DAYS = 7;
+
+const state = {
+  tab: "today",
+  notes: loadNotes(),          // { "YYYY-MM-DD": [ {id, content, createdAt, updatedAt} ] }
+  settings: loadSettings(),
+  calendarCursor: startOfMonth(new Date()),
+  editing: null,               // { date, id|null, content }
+};
+
+function loadNotes() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); }
+  catch { return {}; }
+}
+function saveNotes() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.notes)); }
+  catch (e) { console.warn("Nie udało się zapisać notatek (storage niedostępny):", e); }
+}
+
+function loadSettings() {
+  const defaults = { reminderEnabled: false, reminderTime: "21:00" };
+  try { return { ...defaults, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}") }; }
+  catch { return defaults; }
+}
+function saveSettings() {
+  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(state.settings)); }
+  catch (e) { console.warn("Nie udało się zapisać ustawień (storage niedostępny):", e); }
+}
+
+/* ================== Daty ================== */
+
+function ymd(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+function startOfMonth(d) { return new Date(d.getFullYear(), d.getMonth(), 1); }
+function addMonths(d, n) { return new Date(d.getFullYear(), d.getMonth() + n, 1); }
+function daysInMonth(d) { return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate(); }
+
+function daysBetween(aYmd, bYmd) {
+  const [ay, am, ad] = aYmd.split("-").map(Number);
+  const [by, bm, bd] = bYmd.split("-").map(Number);
+  const a = new Date(ay, am - 1, ad);
+  const b = new Date(by, bm - 1, bd);
+  return Math.round((b - a) / 86400000);
+}
+
+function isEditable(dateYmd) {
+  const today = ymd(new Date());
+  const diff = daysBetween(dateYmd, today); // ile dni temu
+  if (diff < 0) return false;               // przyszłość — brak edycji
+  return diff <= EDIT_WINDOW_DAYS;
+}
+function isToday(dateYmd) { return dateYmd === ymd(new Date()); }
+
+function formatDateLong(dateYmd) {
+  const [y, m, d] = dateYmd.split("-").map(Number);
+  const dt = new Date(y, m - 1, d);
+  return dt.toLocaleDateString("pl-PL", {
+    weekday: "long", day: "numeric", month: "long", year: "numeric"
+  });
+}
+function formatMonthYear(d) {
+  return d.toLocaleDateString("pl-PL", { month: "long", year: "numeric" });
+}
+
+/* ================== Operacje na notatkach ================== */
+
+function getNotes(dateYmd) { return state.notes[dateYmd] || []; }
+
+function uid() {
+  return "n_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+}
+
+function addNote(dateYmd, content) {
+  const list = getNotes(dateYmd);
+  if (list.length >= MAX_NOTES_PER_DAY) return false;
+  const now = new Date().toISOString();
+  list.push({ id: uid(), content: content.trim(), createdAt: now, updatedAt: now });
+  state.notes[dateYmd] = list;
+  saveNotes();
+  return true;
+}
+
+function updateNote(dateYmd, id, content) {
+  const list = getNotes(dateYmd);
+  const note = list.find(n => n.id === id);
+  if (!note) return false;
+  note.content = content.trim();
+  note.updatedAt = new Date().toISOString();
+  saveNotes();
+  return true;
+}
+
+function deleteNote(dateYmd, id) {
+  const list = getNotes(dateYmd).filter(n => n.id !== id);
+  if (list.length === 0) delete state.notes[dateYmd];
+  else state.notes[dateYmd] = list;
+  saveNotes();
+}
+
+/* ================== Render ================== */
+
+const view = document.getElementById("view");
+
+function render() {
+  document.querySelectorAll("nav.tabs button").forEach(b => {
+    b.classList.toggle("active", b.dataset.tab === state.tab);
+  });
+
+  if (state.tab === "today")    renderDay(ymd(new Date()));
+  if (state.tab === "calendar") renderCalendar();
+  if (state.tab === "settings") renderSettings();
+  if (state.tab === "day")      renderDay(state.viewingDate || ymd(new Date()));
+
+  if (state.editing) renderEditor();
+}
+
+function renderDay(dateYmd) {
+  const notes = getNotes(dateYmd);
+  const editable = isEditable(dateYmd);
+  const today = isToday(dateYmd);
+  const canAdd = editable && notes.length < MAX_NOTES_PER_DAY;
+
+  view.innerHTML = `
+    <div class="card">
+      <div class="day-header">
+        <h2>${today ? "Dziś" : ""}${today ? " · " : ""}${formatDateLong(dateYmd)}</h2>
+        <span class="counter ${notes.length >= MAX_NOTES_PER_DAY ? "full" : ""}">
+          ${notes.length} / ${MAX_NOTES_PER_DAY}
+        </span>
+      </div>
+
+      ${!today ? `<button class="primary" id="back-to-cal" style="margin-bottom:14px;background:var(--bg-soft);color:var(--ink);box-shadow:none">← Wróć do kalendarza</button>` : ""}
+
+      ${notes.length === 0
+        ? `<div class="empty">Brak notatek z tego dnia.</div>`
+        : `<div class="note-list">
+            ${notes.map((n, i) => `
+              <div class="note ${editable ? "" : "readonly"}">
+                <div class="idx">${i + 1}</div>
+                <div class="content">${escapeHtml(n.content)}</div>
+                <div class="actions">
+                  <button data-act="edit" data-date="${dateYmd}" data-id="${n.id}" title="Edytuj">✎</button>
+                  <button data-act="del" data-date="${dateYmd}" data-id="${n.id}" title="Usuń">✕</button>
+                </div>
+              </div>
+            `).join("")}
+          </div>`
+      }
+
+      ${canAdd ? `
+        <div class="composer">
+          <textarea id="composer-text" maxlength="${MAX_CHARS}"
+            placeholder="${today ? "Co dziś zapamiętasz?" : "Dodaj notatkę do tego dnia"} (max ${MAX_CHARS} znaków)"></textarea>
+          <div class="composer-row">
+            <span class="char-count" id="char-count">0 / ${MAX_CHARS}</span>
+            <button class="primary" id="composer-save">Dodaj notatkę</button>
+          </div>
+        </div>
+      ` : ""}
+
+      ${editable && !canAdd ? `<div class="notice">Osiągnięto limit ${MAX_NOTES_PER_DAY} notatek${today ? " na dziś" : " dla tego dnia"}. Usuń jakąś, żeby dodać nową.</div>` : ""}
+      ${!editable ? `<div class="notice">Ten dzień jest poza oknem edycji (${EDIT_WINDOW_DAYS} dni). Możesz tylko czytać.</div>` : ""}
+    </div>
+  `;
+
+  if (canAdd) {
+    const ta   = document.getElementById("composer-text");
+    const cc   = document.getElementById("char-count");
+    const save = document.getElementById("composer-save");
+    ta.addEventListener("input", () => {
+      cc.textContent = `${ta.value.length} / ${MAX_CHARS}`;
+      cc.classList.toggle("warn", ta.value.length > MAX_CHARS * 0.9);
+    });
+    save.addEventListener("click", () => {
+      const val = ta.value.trim();
+      if (!val) {
+        ta.focus();
+        ta.style.borderColor = "var(--warn)";
+        setTimeout(() => { ta.style.borderColor = ""; }, 1200);
+        return;
+      }
+      if (addNote(dateYmd, val)) {
+        ta.value = "";
+        render();
+      }
+    });
+  }
+
+  view.querySelectorAll("[data-act='edit']").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const d = btn.dataset.date, id = btn.dataset.id;
+      if (!isEditable(d)) return;
+      const note = getNotes(d).find(n => n.id === id);
+      state.editing = { date: d, id, content: note.content };
+      render();
+    });
+  });
+  view.querySelectorAll("[data-act='del']").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const d = btn.dataset.date, id = btn.dataset.id;
+      if (!isEditable(d)) return;
+      deleteNote(d, id);
+      render();
+    });
+  });
+
+  const back = document.getElementById("back-to-cal");
+  if (back) back.addEventListener("click", () => { state.tab = "calendar"; render(); });
+}
+
+function renderCalendar() {
+  const cursor = state.calendarCursor;
+  const firstDow = (new Date(cursor.getFullYear(), cursor.getMonth(), 1).getDay() + 6) % 7; // pon=0
+  const total = daysInMonth(cursor);
+  const todayYmd = ymd(new Date());
+
+  let cells = "";
+  // poprzedni miesiąc (wyszarzone)
+  for (let i = 0; i < firstDow; i++) {
+    const d = new Date(cursor.getFullYear(), cursor.getMonth(), i - firstDow + 1);
+    cells += dayCell(d, true, todayYmd);
+  }
+  for (let day = 1; day <= total; day++) {
+    const d = new Date(cursor.getFullYear(), cursor.getMonth(), day);
+    cells += dayCell(d, false, todayYmd);
+  }
+  // dopełnij do pełnych tygodni
+  const used = firstDow + total;
+  const rest = (7 - (used % 7)) % 7;
+  for (let i = 1; i <= rest; i++) {
+    const d = new Date(cursor.getFullYear(), cursor.getMonth() + 1, i);
+    cells += dayCell(d, true, todayYmd);
+  }
+
+  view.innerHTML = `
+    <div class="card">
+      <div class="cal-header">
+        <button id="prev-month" aria-label="Poprzedni miesiąc">‹</button>
+        <h2>${formatMonthYear(cursor)}</h2>
+        <button id="next-month" aria-label="Następny miesiąc">›</button>
+      </div>
+      <div class="cal-grid">
+        ${["pon","wt","śr","czw","pt","sob","ndz"].map(d => `<div class="dow">${d}</div>`).join("")}
+        ${cells}
+      </div>
+    </div>
+  `;
+
+  document.getElementById("prev-month").addEventListener("click", () => {
+    state.calendarCursor = addMonths(state.calendarCursor, -1); render();
+  });
+  document.getElementById("next-month").addEventListener("click", () => {
+    state.calendarCursor = addMonths(state.calendarCursor, 1); render();
+  });
+  view.querySelectorAll(".cal-day[data-date]").forEach(el => {
+    el.addEventListener("click", () => {
+      const d = el.dataset.date;
+      state.viewingDate = d;
+      state.tab = "day";
+      renderDay(d);
+      document.querySelectorAll("nav.tabs button").forEach(b => b.classList.remove("active"));
+    });
+  });
+}
+
+function dayCell(d, outside, todayYmd) {
+  const dy = ymd(d);
+  const count = getNotes(dy).length;
+  const classes = ["cal-day"];
+  if (outside) classes.push("outside");
+  if (dy === todayYmd) classes.push("today");
+  if (count > 0) classes.push("has-notes");
+  if (count >= MAX_NOTES_PER_DAY) classes.push("full");
+  return `
+    <button class="${classes.join(" ")}" data-date="${dy}" title="${formatDateLong(dy)}${count ? ` · ${count} notatek` : ""}">
+      ${d.getDate()}
+      ${count > 0 ? `<span class="dot"></span>` : ""}
+    </button>
+  `;
+}
+
+function renderSettings() {
+  const s = state.settings;
+  view.innerHTML = `
+    <div class="card">
+      <h2 style="margin-top:0">Ustawienia</h2>
+
+      <div class="setting-row">
+        <label for="reminder-enabled">Codzienne przypomnienie</label>
+        <input type="checkbox" id="reminder-enabled" ${s.reminderEnabled ? "checked" : ""}/>
+      </div>
+
+      <div class="setting-row">
+        <label for="reminder-time">Godzina przypomnienia</label>
+        <input type="time" id="reminder-time" value="${s.reminderTime}" />
+      </div>
+
+      <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:8px">
+        <label>Eksport / import danych</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="primary" id="export-btn" style="background:var(--bg-soft);color:var(--ink);box-shadow:none">⬇ Eksport JSON</button>
+          <button class="primary" id="import-btn" style="background:var(--bg-soft);color:var(--ink);box-shadow:none">⬆ Import JSON</button>
+          <input type="file" id="import-file" accept="application/json" style="display:none"/>
+        </div>
+      </div>
+
+      <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:6px">
+        <label style="color:var(--warn)">Strefa niebezpieczna</label>
+        <button class="primary" id="clear-btn" style="background:var(--warn)">Usuń wszystkie notatki</button>
+      </div>
+
+      <p style="font-size:12px;color:var(--ink-soft);margin-top:14px;line-height:1.5">
+        Przypomnienia działają tylko gdy ta karta jest otwarta w przeglądarce.
+        Aby otrzymywać powiadomienia także po zamknięciu, w kolejnej wersji potrzebne będzie konto i sync w chmurze.
+      </p>
+    </div>
+  `;
+
+  document.getElementById("reminder-enabled").addEventListener("change", async (e) => {
+    if (e.target.checked && "Notification" in window) {
+      const perm = await Notification.requestPermission();
+      if (perm !== "granted") { e.target.checked = false; alert("Brak zgody na powiadomienia."); return; }
+    }
+    state.settings.reminderEnabled = e.target.checked;
+    saveSettings();
+    scheduleReminder();
+  });
+  document.getElementById("reminder-time").addEventListener("change", (e) => {
+    state.settings.reminderTime = e.target.value;
+    saveSettings();
+    scheduleReminder();
+  });
+
+  document.getElementById("export-btn").addEventListener("click", () => {
+    const data = { notes: state.notes, settings: state.settings, exportedAt: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `dziennik-${ymd(new Date())}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+  document.getElementById("import-btn").addEventListener("click", () => document.getElementById("import-file").click());
+  document.getElementById("import-file").addEventListener("change", async (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    try {
+      const data = JSON.parse(await file.text());
+      if (!data.notes) throw new Error("Brak pola 'notes'.");
+      if (!confirm("Zaimportować i NADPISAĆ obecne notatki?")) return;
+      state.notes = data.notes;
+      if (data.settings) state.settings = { ...state.settings, ...data.settings };
+      saveNotes(); saveSettings();
+      alert("Import zakończony."); render();
+    } catch (err) { alert("Błąd importu: " + err.message); }
+  });
+  document.getElementById("clear-btn").addEventListener("click", () => {
+    if (!confirm("Na pewno usunąć WSZYSTKIE notatki? Tej operacji nie da się cofnąć.")) return;
+    if (!confirm("Naprawdę na pewno?")) return;
+    state.notes = {}; saveNotes(); render();
+  });
+}
+
+function renderEditor() {
+  const e = state.editing;
+  const modal = document.createElement("div");
+  modal.className = "modal-backdrop";
+  modal.innerHTML = `
+    <div class="modal">
+      <h3>Edycja notatki · ${formatDateLong(e.date)}</h3>
+      <textarea id="edit-text" maxlength="${MAX_CHARS}"
+        style="width:100%;min-height:120px;border:1px solid var(--line);border-radius:12px;padding:12px;font:inherit;font-size:15px;color:var(--ink);background:var(--bg)">${escapeHtml(e.content)}</textarea>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+        <span class="char-count" id="edit-cc">${e.content.length} / ${MAX_CHARS}</span>
+      </div>
+      <div class="modal-actions">
+        ${e.id ? `<button class="delete" id="edit-delete">Usuń</button>` : ""}
+        <button class="cancel" id="edit-cancel">Anuluj</button>
+        <button class="save" id="edit-save">Zapisz</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  const ta = document.getElementById("edit-text");
+  const cc = document.getElementById("edit-cc");
+  ta.focus();
+  ta.addEventListener("input", () => { cc.textContent = `${ta.value.length} / ${MAX_CHARS}`; });
+
+  const close = () => { modal.remove(); state.editing = null; };
+
+  document.getElementById("edit-cancel").addEventListener("click", close);
+  modal.addEventListener("click", (ev) => { if (ev.target === modal) close(); });
+
+  document.getElementById("edit-save").addEventListener("click", () => {
+    const val = ta.value.trim();
+    if (!val) { alert("Notatka nie może być pusta."); return; }
+    if (e.id) updateNote(e.date, e.id, val);
+    else addNote(e.date, val);
+    close(); render();
+  });
+
+  if (e.id) {
+    document.getElementById("edit-delete").addEventListener("click", () => {
+      if (!confirm("Usunąć tę notatkę?")) return;
+      deleteNote(e.date, e.id);
+      close(); render();
+    });
+  }
+}
+
+/* ================== Przypomnienie ================== */
+
+let reminderTimer = null;
+function scheduleReminder() {
+  if (reminderTimer) { clearTimeout(reminderTimer); reminderTimer = null; }
+  if (!state.settings.reminderEnabled) return;
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+
+  const [h, m] = state.settings.reminderTime.split(":").map(Number);
+  const now = new Date();
+  const next = new Date(now);
+  next.setHours(h, m, 0, 0);
+  if (next <= now) next.setDate(next.getDate() + 1);
+  const delay = next - now;
+
+  reminderTimer = setTimeout(() => {
+    const todayCount = getNotes(ymd(new Date())).length;
+    if (todayCount < MAX_NOTES_PER_DAY) {
+      new Notification("Dziennik", { body: `Zapisz dziś notatkę (${todayCount}/${MAX_NOTES_PER_DAY}).` });
+    }
+    scheduleReminder();
+  }, delay);
+}
+
+/* ================== Utils ================== */
+
+function escapeHtml(s) {
+  return s
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+
+/* ================== Start ================== */
+
+document.querySelectorAll("nav.tabs button").forEach(btn => {
+  btn.addEventListener("click", () => { state.tab = btn.dataset.tab; render(); });
+});
+
+render();
+scheduleReminder();
+</script>
+</body>
+</html>
