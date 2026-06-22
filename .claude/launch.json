@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "static",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": ["-NoProfile", "-Command", "& ([ScriptBlock]::Create((Get-Content -Raw '.claude/serve.ps1')))"],
+      "port": 5173
+    }
+  ]
+}

@@ -4,6 +4,13 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Dziennik – 5 notatek dziennie</title>
+<script type="module">
+  import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+  const SUPABASE_URL = "https://kkegymepatwufnemtldr.supabase.co";
+  const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_k7vmUw1RIpEvpJEmDJowvA_p2R3gy0L";
+  window.supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+  window.dispatchEvent(new Event("supabase-ready"));
+</script>
 <style>
   :root {
     --bg: #fdf6f0;
@@ -375,6 +382,166 @@
     .card { padding: 16px; }
     nav.tabs button { font-size: 13px; padding: 9px 8px; }
   }
+
+  /* Auth */
+  .auth-card { max-width: 420px; margin: 0 auto; }
+  .auth-card h2 { margin: 0 0 6px; font-size: 22px; }
+  .auth-card p.sub { margin: 0 0 18px; color: var(--ink-soft); font-size: 14px; }
+  .auth-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+  .auth-field label { font-size: 13px; color: var(--ink-soft); }
+  .auth-field input {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 10px 12px;
+    font: inherit;
+    font-size: 15px;
+    background: var(--bg);
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+  .auth-field input:focus { border-color: var(--accent); }
+  .auth-actions { display: flex; gap: 10px; align-items: center; margin-top: 6px; }
+  .auth-actions .primary { flex: 1; }
+  .auth-switch {
+    margin-top: 14px;
+    font-size: 13px;
+    color: var(--ink-soft);
+    text-align: center;
+  }
+  .auth-switch button {
+    background: none;
+    border: none;
+    color: var(--accent-strong);
+    cursor: pointer;
+    font: inherit;
+    text-decoration: underline;
+    padding: 0;
+  }
+  .auth-error {
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+  .auth-info {
+    background: var(--bg-soft);
+    color: var(--ink-soft);
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+  .top-right {
+    position: absolute;
+    right: 20px;
+    top: 24px;
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+  .top-right button {
+    background: var(--bg-soft);
+    border: none;
+    border-radius: 10px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font: inherit;
+    color: var(--ink);
+  }
+  .top-right button:hover { background: var(--accent-soft); }
+  header.top { position: relative; }
+
+  /* Chat */
+  .chat-log {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 14px;
+    max-height: 50vh;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  .chat-bubble {
+    padding: 10px 14px;
+    border-radius: 14px;
+    max-width: 88%;
+    font-size: 14px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  .chat-bubble.user {
+    background: var(--bg-soft);
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+  }
+  .chat-bubble.assistant {
+    background: var(--accent-soft);
+    color: var(--ink);
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+  }
+  .chat-bubble.system-error {
+    background: #fde2e2;
+    color: var(--warn);
+    align-self: center;
+    font-size: 13px;
+    font-style: italic;
+  }
+  .chat-empty {
+    color: var(--ink-soft);
+    text-align: center;
+    font-style: italic;
+    padding: 18px 8px;
+    font-size: 14px;
+  }
+  .proposal-card {
+    border: 1px dashed var(--accent);
+    border-radius: 14px;
+    padding: 12px 14px;
+    background: #fff;
+    margin-top: 8px;
+  }
+  .proposal-card .meta {
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+    text-transform: capitalize;
+  }
+  .proposal-card .text {
+    font-size: 14px;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    margin-bottom: 10px;
+  }
+  .proposal-card .actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+  .proposal-card .actions button {
+    border: none;
+    padding: 7px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .proposal-card .actions .accept { background: var(--accent); color: white; }
+  .proposal-card .actions .reject { background: var(--bg-soft); color: var(--ink); }
+  .proposal-card.done {
+    opacity: 0.6;
+    border-style: solid;
+    border-color: var(--ok);
+  }
+  .typing {
+    display: inline-block;
+    color: var(--ink-soft);
+    font-style: italic;
+    font-size: 13px;
+    padding: 8px 12px;
+  }
 </style>
 </head>
 <body>
@@ -383,46 +550,46 @@
   <header class="top">
     <h1>Dziennik</h1>
     <p>5 notatek dziennie · spokojnie, dzień po dniu</p>
+    <div class="top-right" id="user-bar" hidden></div>
   </header>
 
-  <nav class="tabs">
+  <nav class="tabs" id="tabs" hidden>
     <button data-tab="today" class="active">Dziś</button>
     <button data-tab="calendar">Kalendarz</button>
+    <button data-tab="chat">Asystent</button>
     <button data-tab="settings">Ustawienia</button>
   </nav>
 
   <main id="view"></main>
 
   <footer class="bottom">
-    Dane zapisywane lokalnie w tej przeglądarce.
+    Dane synchronizowane w chmurze (Supabase).
   </footer>
 </div>
 
 <script>
 /* ================== Stan i pamięć ================== */
 
-const STORAGE_KEY  = "dziennik.notes.v1";
 const SETTINGS_KEY = "dziennik.settings.v1";
 const MAX_NOTES_PER_DAY = 5;
 const MAX_CHARS = 500;
 const EDIT_WINDOW_DAYS = 7;
 
+const SUPABASE_URL_CONST = "https://kkegymepatwufnemtldr.supabase.co";
+
 const state = {
   tab: "today",
-  notes: loadNotes(),          // { "YYYY-MM-DD": [ {id, content, createdAt, updatedAt} ] }
+  notes: {},                   // { "YYYY-MM-DD": [ {id, content, createdAt, updatedAt} ] } — cache
   settings: loadSettings(),
   calendarCursor: startOfMonth(new Date()),
   editing: null,               // { date, id|null, content }
+  session: null,
+  authMode: "signin",          // "signin" | "signup"
+  authError: null,
+  authInfo: null,
+  authBusy: false,
+  chat: { messages: [], proposals: [], busy: false, error: null },
 };
-
-function loadNotes() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); }
-  catch { return {}; }
-}
-function saveNotes() {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.notes)); }
-  catch (e) { console.warn("Nie udało się zapisać notatek (storage niedostępny):", e); }
-}
 
 function loadSettings() {
   const defaults = { reminderEnabled: false, reminderTime: "21:00" };
@@ -473,59 +640,219 @@ function formatMonthYear(d) {
   return d.toLocaleDateString("pl-PL", { month: "long", year: "numeric" });
 }
 
-/* ================== Operacje na notatkach ================== */
+/* ================== Operacje na notatkach (Supabase) ================== */
 
 function getNotes(dateYmd) { return state.notes[dateYmd] || []; }
 
-function uid() {
-  return "n_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+function mapRow(row) {
+  return {
+    id: row.id,
+    position: row.position,
+    content: row.content,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
 }
 
-function addNote(dateYmd, content) {
+function setDayCache(dateYmd, rows) {
+  const sorted = [...rows].sort((a, b) => a.position - b.position).map(mapRow);
+  if (sorted.length === 0) delete state.notes[dateYmd];
+  else state.notes[dateYmd] = sorted;
+}
+
+function firstFreePosition(dateYmd) {
+  const used = new Set(getNotes(dateYmd).map(n => n.position));
+  for (let p = 1; p <= MAX_NOTES_PER_DAY; p++) if (!used.has(p)) return p;
+  return null;
+}
+
+async function fetchNotesForRange(fromYmd, toYmd) {
+  if (!state.session) return;
+  const { data, error } = await window.supabase
+    .from("notes")
+    .select("id, date, position, content, created_at, updated_at")
+    .gte("date", fromYmd)
+    .lte("date", toYmd)
+    .order("date", { ascending: true })
+    .order("position", { ascending: true });
+  if (error) { console.warn("fetchNotesForRange:", error.message); return; }
+  for (const ymdKey of Object.keys(state.notes)) {
+    if (ymdKey >= fromYmd && ymdKey <= toYmd) delete state.notes[ymdKey];
+  }
+  const grouped = {};
+  for (const row of data) (grouped[row.date] ||= []).push(row);
+  for (const [d, rows] of Object.entries(grouped)) setDayCache(d, rows);
+}
+
+async function fetchNotesForMonth(cursorDate) {
+  const y = cursorDate.getFullYear();
+  const m = cursorDate.getMonth();
+  const from = ymd(new Date(y, m, 1));
+  const to = ymd(new Date(y, m + 1, 0));
+  await fetchNotesForRange(from, to);
+}
+
+async function fetchNotesForDate(dateYmd) {
+  await fetchNotesForRange(dateYmd, dateYmd);
+}
+
+async function addNote(dateYmd, content) {
   const list = getNotes(dateYmd);
-  if (list.length >= MAX_NOTES_PER_DAY) return false;
-  const now = new Date().toISOString();
-  list.push({ id: uid(), content: content.trim(), createdAt: now, updatedAt: now });
-  state.notes[dateYmd] = list;
-  saveNotes();
+  if (list.length >= MAX_NOTES_PER_DAY) return { ok: false, reason: "limit" };
+  const position = firstFreePosition(dateYmd);
+  if (position === null) return { ok: false, reason: "limit" };
+  const { data, error } = await window.supabase
+    .from("notes")
+    .insert({
+      user_id: state.session.user.id,
+      date: dateYmd,
+      position,
+      content: content.trim(),
+    })
+    .select("id, date, position, content, created_at, updated_at")
+    .single();
+  if (error) {
+    if (error.code === "23505") return { ok: false, reason: "limit" };
+    console.warn("addNote:", error.message);
+    return { ok: false, reason: "error", message: error.message };
+  }
+  setDayCache(dateYmd, [...list.map(rowFromCache), data]);
+  return { ok: true };
+}
+
+function rowFromCache(n) {
+  return { id: n.id, position: n.position, content: n.content, created_at: n.createdAt, updated_at: n.updatedAt };
+}
+
+async function updateNote(dateYmd, id, content) {
+  const { data, error } = await window.supabase
+    .from("notes")
+    .update({ content: content.trim() })
+    .eq("id", id)
+    .select("id, date, position, content, created_at, updated_at")
+    .single();
+  if (error) { console.warn("updateNote:", error.message); return false; }
+  const others = getNotes(dateYmd).filter(n => n.id !== id).map(rowFromCache);
+  setDayCache(dateYmd, [...others, data]);
   return true;
 }
 
-function updateNote(dateYmd, id, content) {
-  const list = getNotes(dateYmd);
-  const note = list.find(n => n.id === id);
-  if (!note) return false;
-  note.content = content.trim();
-  note.updatedAt = new Date().toISOString();
-  saveNotes();
+async function deleteNote(dateYmd, id) {
+  const { error } = await window.supabase.from("notes").delete().eq("id", id);
+  if (error) { console.warn("deleteNote:", error.message); return false; }
+  const remaining = getNotes(dateYmd).filter(n => n.id !== id).map(rowFromCache);
+  setDayCache(dateYmd, remaining);
   return true;
-}
-
-function deleteNote(dateYmd, id) {
-  const list = getNotes(dateYmd).filter(n => n.id !== id);
-  if (list.length === 0) delete state.notes[dateYmd];
-  else state.notes[dateYmd] = list;
-  saveNotes();
 }
 
 /* ================== Render ================== */
 
 const view = document.getElementById("view");
+const tabsEl = document.getElementById("tabs");
+const userBarEl = document.getElementById("user-bar");
 
 function render() {
+  if (!state.session) {
+    tabsEl.hidden = true;
+    userBarEl.hidden = true;
+    renderAuth();
+    return;
+  }
+
+  tabsEl.hidden = false;
+  userBarEl.hidden = false;
+  userBarEl.innerHTML = `<button id="logout-btn" title="Wyloguj">Wyloguj (${escapeHtml(state.session.user.email || "")})</button>`;
+  document.getElementById("logout-btn").addEventListener("click", async () => {
+    await window.supabase.auth.signOut();
+  });
+
   document.querySelectorAll("nav.tabs button").forEach(b => {
     b.classList.toggle("active", b.dataset.tab === state.tab);
   });
 
   if (state.tab === "today")    renderDay(ymd(new Date()));
   if (state.tab === "calendar") renderCalendar();
+  if (state.tab === "chat")     renderChat();
   if (state.tab === "settings") renderSettings();
   if (state.tab === "day")      renderDay(state.viewingDate || ymd(new Date()));
 
   if (state.editing) renderEditor();
 }
 
+function renderAuth() {
+  const isSignup = state.authMode === "signup";
+  view.innerHTML = `
+    <div class="card auth-card">
+      <h2>${isSignup ? "Utwórz konto" : "Zaloguj się"}</h2>
+      <p class="sub">${isSignup ? "Załóż konto, aby zsynchronizować notatki." : "Wpisz email i hasło, aby kontynuować."}</p>
+      ${state.authError ? `<div class="auth-error">${escapeHtml(state.authError)}</div>` : ""}
+      ${state.authInfo ? `<div class="auth-info">${escapeHtml(state.authInfo)}</div>` : ""}
+      <form id="auth-form" autocomplete="on">
+        <div class="auth-field">
+          <label for="auth-email">Email</label>
+          <input type="email" id="auth-email" required autocomplete="email" />
+        </div>
+        <div class="auth-field">
+          <label for="auth-password">Hasło</label>
+          <input type="password" id="auth-password" required minlength="6"
+            autocomplete="${isSignup ? "new-password" : "current-password"}" />
+        </div>
+        <div class="auth-actions">
+          <button type="submit" class="primary" ${state.authBusy ? "disabled" : ""}>
+            ${state.authBusy ? "Chwila…" : (isSignup ? "Zarejestruj" : "Zaloguj")}
+          </button>
+        </div>
+      </form>
+      <div class="auth-switch">
+        ${isSignup ? "Masz już konto?" : "Nie masz konta?"}
+        <button type="button" id="auth-toggle">${isSignup ? "Zaloguj się" : "Zarejestruj się"}</button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById("auth-toggle").addEventListener("click", () => {
+    state.authMode = isSignup ? "signin" : "signup";
+    state.authError = null;
+    state.authInfo = null;
+    render();
+  });
+
+  document.getElementById("auth-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (state.authBusy) return;
+    const email = document.getElementById("auth-email").value.trim();
+    const password = document.getElementById("auth-password").value;
+    state.authBusy = true;
+    state.authError = null;
+    state.authInfo = null;
+    render();
+    try {
+      if (isSignup) {
+        const { data, error } = await window.supabase.auth.signUp({ email, password });
+        if (error) throw error;
+        if (!data.session) {
+          state.authInfo = "Konto utworzone. Sprawdź mail, aby je potwierdzić, albo wyłącz potwierdzanie maila w Supabase.";
+          state.authMode = "signin";
+        }
+      } else {
+        const { error } = await window.supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+      }
+    } catch (err) {
+      state.authError = err?.message || "Nie udało się zalogować.";
+    } finally {
+      state.authBusy = false;
+      render();
+    }
+  });
+}
+
 function renderDay(dateYmd) {
+  fetchNotesForDate(dateYmd).then(() => renderDayInner(dateYmd));
+  renderDayInner(dateYmd);
+}
+
+function renderDayInner(dateYmd) {
   const notes = getNotes(dateYmd);
   const editable = isEditable(dateYmd);
   const today = isToday(dateYmd);
@@ -582,7 +909,7 @@ function renderDay(dateYmd) {
       cc.textContent = `${ta.value.length} / ${MAX_CHARS}`;
       cc.classList.toggle("warn", ta.value.length > MAX_CHARS * 0.9);
     });
-    save.addEventListener("click", () => {
+    save.addEventListener("click", async () => {
       const val = ta.value.trim();
       if (!val) {
         ta.focus();
@@ -590,9 +917,17 @@ function renderDay(dateYmd) {
         setTimeout(() => { ta.style.borderColor = ""; }, 1200);
         return;
       }
-      if (addNote(dateYmd, val)) {
+      save.disabled = true;
+      const res = await addNote(dateYmd, val);
+      save.disabled = false;
+      if (res.ok) {
         ta.value = "";
         render();
+      } else if (res.reason === "limit") {
+        alert(`Osiągnięto limit ${MAX_NOTES_PER_DAY} notatek na ten dzień.`);
+        render();
+      } else {
+        alert("Nie udało się zapisać notatki: " + (res.message || "spróbuj ponownie."));
       }
     });
   }
@@ -607,10 +942,10 @@ function renderDay(dateYmd) {
     });
   });
   view.querySelectorAll("[data-act='del']").forEach(btn => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", async () => {
       const d = btn.dataset.date, id = btn.dataset.id;
       if (!isEditable(d)) return;
-      deleteNote(d, id);
+      await deleteNote(d, id);
       render();
     });
   });
@@ -620,6 +955,11 @@ function renderDay(dateYmd) {
 }
 
 function renderCalendar() {
+  fetchNotesForMonth(state.calendarCursor).then(() => renderCalendarInner());
+  renderCalendarInner();
+}
+
+function renderCalendarInner() {
   const cursor = state.calendarCursor;
   const firstDow = (new Date(cursor.getFullYear(), cursor.getMonth(), 1).getDay() + 6) % 7; // pon=0
   const total = daysInMonth(cursor);
@@ -706,23 +1046,14 @@ function renderSettings() {
         <input type="time" id="reminder-time" value="${s.reminderTime}" />
       </div>
 
-      <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:8px">
-        <label>Eksport / import danych</label>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="primary" id="export-btn" style="background:var(--bg-soft);color:var(--ink);box-shadow:none">⬇ Eksport JSON</button>
-          <button class="primary" id="import-btn" style="background:var(--bg-soft);color:var(--ink);box-shadow:none">⬆ Import JSON</button>
-          <input type="file" id="import-file" accept="application/json" style="display:none"/>
-        </div>
-      </div>
-
       <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:6px">
-        <label style="color:var(--warn)">Strefa niebezpieczna</label>
-        <button class="primary" id="clear-btn" style="background:var(--warn)">Usuń wszystkie notatki</button>
+        <label>Konto</label>
+        <button class="primary" id="settings-logout" style="background:var(--bg-soft);color:var(--ink);box-shadow:none">Wyloguj się</button>
       </div>
 
       <p style="font-size:12px;color:var(--ink-soft);margin-top:14px;line-height:1.5">
         Przypomnienia działają tylko gdy ta karta jest otwarta w przeglądarce.
-        Aby otrzymywać powiadomienia także po zamknięciu, w kolejnej wersji potrzebne będzie konto i sync w chmurze.
+        Notatki są zapisywane w Twoim koncie Supabase i synchronizowane między urządzeniami.
       </p>
     </div>
   `;
@@ -742,33 +1073,185 @@ function renderSettings() {
     scheduleReminder();
   });
 
-  document.getElementById("export-btn").addEventListener("click", () => {
-    const data = { notes: state.notes, settings: state.settings, exportedAt: new Date().toISOString() };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = `dziennik-${ymd(new Date())}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+  document.getElementById("settings-logout").addEventListener("click", async () => {
+    await window.supabase.auth.signOut();
   });
-  document.getElementById("import-btn").addEventListener("click", () => document.getElementById("import-file").click());
-  document.getElementById("import-file").addEventListener("change", async (e) => {
-    const file = e.target.files[0]; if (!file) return;
-    try {
-      const data = JSON.parse(await file.text());
-      if (!data.notes) throw new Error("Brak pola 'notes'.");
-      if (!confirm("Zaimportować i NADPISAĆ obecne notatki?")) return;
-      state.notes = data.notes;
-      if (data.settings) state.settings = { ...state.settings, ...data.settings };
-      saveNotes(); saveSettings();
-      alert("Import zakończony."); render();
-    } catch (err) { alert("Błąd importu: " + err.message); }
+}
+
+function renderChat() {
+  const chat = state.chat;
+  const activeDateYmd = state.tab === "day" && state.viewingDate
+    ? state.viewingDate
+    : ymd(new Date());
+
+  const logHtml = chat.messages.length === 0 && !chat.busy && !chat.error
+    ? `<div class="chat-empty">Zapytaj o powtarzające się wątki, korelacje czasu albo poproś o propozycję notatki.</div>`
+    : chat.messages.map(m => {
+        if (m.role === "user") {
+          return `<div class="chat-bubble user">${escapeHtml(m.content)}</div>`;
+        }
+        if (m.role === "assistant") {
+          const proposalsHtml = (m.proposals || []).map((p, i) =>
+            renderProposalCard(p, m.id, i)
+          ).join("");
+          return `<div class="chat-bubble assistant">${escapeHtml(m.content || "(brak treści)")}</div>${proposalsHtml}`;
+        }
+        return "";
+      }).join("")
+      + (chat.busy ? `<div class="typing">Asystent analizuje…</div>` : "")
+      + (chat.error ? `<div class="chat-bubble system-error">${escapeHtml(chat.error)}</div>` : "");
+
+  view.innerHTML = `
+    <div class="card">
+      <div class="day-header">
+        <h2>Asystent · Albert Einstein</h2>
+        <span class="counter">aktywny dzień: ${activeDateYmd}</span>
+      </div>
+      <div class="chat-log" id="chat-log">${logHtml}</div>
+      <div class="composer">
+        <textarea id="chat-input" maxlength="2000"
+          placeholder="Np. „Ile razy w czerwcu pisałem o śnie?” albo „Zaproponuj notatkę o dzisiejszej pogodzie.”"></textarea>
+        <div class="composer-row">
+          <span class="char-count" id="chat-cc">0 / 2000</span>
+          <button class="primary" id="chat-send" ${chat.busy ? "disabled" : ""}>${chat.busy ? "Wysyłam…" : "Wyślij"}</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const log = document.getElementById("chat-log");
+  if (log) log.scrollTop = log.scrollHeight;
+
+  const ta = document.getElementById("chat-input");
+  const cc = document.getElementById("chat-cc");
+  const send = document.getElementById("chat-send");
+  ta.addEventListener("input", () => { cc.textContent = `${ta.value.length} / 2000`; });
+  ta.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      send.click();
+    }
   });
-  document.getElementById("clear-btn").addEventListener("click", () => {
-    if (!confirm("Na pewno usunąć WSZYSTKIE notatki? Tej operacji nie da się cofnąć.")) return;
-    if (!confirm("Naprawdę na pewno?")) return;
-    state.notes = {}; saveNotes(); render();
+  send.addEventListener("click", () => sendChatMessage(ta.value, activeDateYmd));
+
+  document.querySelectorAll("[data-proposal-act]").forEach(btn => {
+    btn.addEventListener("click", () => handleProposalAction(
+      btn.dataset.msgId,
+      Number(btn.dataset.propIdx),
+      btn.dataset.proposalAct,
+    ));
   });
+
+  if (!ta.value) ta.focus();
+}
+
+function renderProposalCard(p, msgId, idx) {
+  const stateClass = p.status ? `done` : "";
+  const label = p.status === "accepted" ? "✓ Dodano do dziennika"
+              : p.status === "rejected" ? "× Odrzucono"
+              : p.status === "error" ? `× Błąd: ${escapeHtml(p.errorMessage || "")}`
+              : null;
+  return `
+    <div class="proposal-card ${stateClass}">
+      <div class="meta">📝 Propozycja wpisu · ${formatDateLong(p.date)}</div>
+      <div class="text">${escapeHtml(p.content)}</div>
+      ${label
+        ? `<div class="meta" style="text-align:right">${label}</div>`
+        : `<div class="actions">
+            <button class="reject" data-proposal-act="reject" data-msg-id="${msgId}" data-prop-idx="${idx}">Odrzuć</button>
+            <button class="accept" data-proposal-act="accept" data-msg-id="${msgId}" data-prop-idx="${idx}">Akceptuj</button>
+          </div>`}
+    </div>
+  `;
+}
+
+async function sendChatMessage(text, activeDateYmd) {
+  const val = (text || "").trim();
+  if (!val || state.chat.busy) return;
+
+  state.chat.messages.push({ role: "user", content: val });
+  state.chat.busy = true;
+  state.chat.error = null;
+  render();
+
+  await fetchNotesForDate(activeDateYmd);
+  const activeNotes = getNotes(activeDateYmd).map(n => ({
+    position: n.position, content: n.content,
+  }));
+
+  const historyForApi = state.chat.messages
+    .filter(m => m.role === "user" || m.role === "assistant")
+    .map(m => ({ role: m.role, content: m.content }));
+
+  let payload;
+  try {
+    const res = await fetch(`${SUPABASE_URL_CONST}/functions/v1/notes-chat`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${state.session.access_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messages: historyForApi,
+        context: {
+          today_ymd: ymd(new Date()),
+          active_date_ymd: activeDateYmd,
+          active_date_notes: activeNotes,
+        },
+      }),
+    });
+    payload = await res.json();
+    if (!res.ok) throw new Error(payload?.error || `HTTP ${res.status}`);
+  } catch (err) {
+    state.chat.busy = false;
+    state.chat.error = `Asystent jest chwilowo niedostępny: ${err.message}`;
+    render();
+    return;
+  }
+
+  const msgId = "m_" + Math.random().toString(36).slice(2, 10);
+  state.chat.messages.push({
+    id: msgId,
+    role: "assistant",
+    content: payload.reply || "",
+    proposals: (payload.proposals || []).map(p => ({ ...p, status: null })),
+  });
+  state.chat.busy = false;
+  render();
+}
+
+async function handleProposalAction(msgId, idx, action) {
+  const msg = state.chat.messages.find(m => m.id === msgId);
+  if (!msg) return;
+  const prop = msg.proposals?.[idx];
+  if (!prop || prop.status) return;
+
+  if (action === "reject") {
+    prop.status = "rejected";
+    render();
+    return;
+  }
+  if (action === "accept") {
+    const res = await addNote(prop.date, prop.content);
+    if (res.ok) {
+      prop.status = "accepted";
+      if (state.tab === "day" && state.viewingDate === prop.date) {
+        render();
+      } else if (state.tab === "today" && prop.date === ymd(new Date())) {
+        render();
+      } else {
+        render();
+      }
+    } else if (res.reason === "limit") {
+      prop.status = "error";
+      prop.errorMessage = `osiągnięto limit ${MAX_NOTES_PER_DAY} na ten dzień`;
+      render();
+    } else {
+      prop.status = "error";
+      prop.errorMessage = res.message || "nie udało się zapisać";
+      render();
+    }
+  }
 }
 
 function renderEditor() {
@@ -802,18 +1285,28 @@ function renderEditor() {
   document.getElementById("edit-cancel").addEventListener("click", close);
   modal.addEventListener("click", (ev) => { if (ev.target === modal) close(); });
 
-  document.getElementById("edit-save").addEventListener("click", () => {
+  document.getElementById("edit-save").addEventListener("click", async () => {
     const val = ta.value.trim();
     if (!val) { alert("Notatka nie może być pusta."); return; }
-    if (e.id) updateNote(e.date, e.id, val);
-    else addNote(e.date, val);
+    const btn = document.getElementById("edit-save");
+    btn.disabled = true;
+    let ok = true;
+    if (e.id) {
+      ok = await updateNote(e.date, e.id, val);
+    } else {
+      const res = await addNote(e.date, val);
+      ok = res.ok;
+      if (!ok && res.reason === "limit") alert(`Osiągnięto limit ${MAX_NOTES_PER_DAY} notatek na ten dzień.`);
+    }
+    btn.disabled = false;
+    if (!ok) return;
     close(); render();
   });
 
   if (e.id) {
-    document.getElementById("edit-delete").addEventListener("click", () => {
+    document.getElementById("edit-delete").addEventListener("click", async () => {
       if (!confirm("Usunąć tę notatkę?")) return;
-      deleteNote(e.date, e.id);
+      await deleteNote(e.date, e.id);
       close(); render();
     });
   }
@@ -857,8 +1350,31 @@ document.querySelectorAll("nav.tabs button").forEach(btn => {
   btn.addEventListener("click", () => { state.tab = btn.dataset.tab; render(); });
 });
 
-render();
-scheduleReminder();
+async function boot() {
+  const { data } = await window.supabase.auth.getSession();
+  state.session = data.session;
+  render();
+  scheduleReminder();
+
+  window.supabase.auth.onAuthStateChange((_event, session) => {
+    const wasSignedIn = !!state.session;
+    state.session = session;
+    if (!session) {
+      state.notes = {};
+      state.tab = "today";
+      state.viewingDate = null;
+      state.editing = null;
+      state.chat = { messages: [], proposals: [], busy: false, error: null };
+    } else if (!wasSignedIn) {
+      state.authError = null;
+      state.authInfo = null;
+    }
+    render();
+  });
+}
+
+if (window.supabase) boot();
+else window.addEventListener("supabase-ready", boot, { once: true });
 </script>
 </body>
 </html>
