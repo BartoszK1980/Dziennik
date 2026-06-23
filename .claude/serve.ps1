@@ -1,6 +1,8 @@
+param([int]$Port = 0)
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
-$port = 5173
+if ($Port -le 0) { $Port = if ($env:PORT) { [int]$env:PORT } else { 8765 } }
+$port = $Port
 $listener = New-Object System.Net.HttpListener
 $prefix = "http://localhost:$port/"
 $listener.Prefixes.Add($prefix)

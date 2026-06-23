@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dziennik · API Docs</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-soft: #fafafa;
+    --bg-code: #0a0a0a;
+    --ink: #0a0a0a;
+    --ink-soft: #666666;
+    --ink-faint: #999999;
+    --line: #ebebeb;
+    --line-strong: #d4d4d4;
+    --accent: #c97b8a;
+    --accent-ink: #ffffff;
+    --code-ink: #ededed;
+    --code-string: #a5d6a7;
+    --code-key: #f8b4c0;
+    --code-comment: #6b7280;
+    --pill-get: #e0f2fe;
+    --pill-get-ink: #075985;
+    --pill-post: #dcfce7;
+    --pill-post-ink: #166534;
+    --radius: 8px;
+    --radius-lg: 12px;
+    --sidebar-w: 260px;
+    --toc-w: 220px;
+    --content-max: 760px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0a0a0a;
+      --bg-soft: #111111;
+      --bg-code: #161616;
+      --ink: #ededed;
+      --ink-soft: #a3a3a3;
+      --ink-faint: #6b6b6b;
+      --line: #1f1f1f;
+      --line-strong: #2a2a2a;
+      --pill-get: #0c2434;
+      --pill-get-ink: #7dd3fc;
+      --pill-post: #0c2818;
+      --pill-post-ink: #86efac;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, "Segoe UI", "Inter", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--ink);
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: inherit; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  code, pre { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace; font-size: 13px; }
+  :not(pre) > code {
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 0.88em;
+  }
+
+  /* ===== Layout ===== */
+  .layout {
+    display: grid;
+    grid-template-columns: var(--sidebar-w) 1fr;
+    min-height: 100vh;
+  }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    aside.sidebar { display: none; }
+  }
+
+  header.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: saturate(180%) blur(12px);
+    border-bottom: 1px solid var(--line);
+  }
+  @media (prefers-color-scheme: dark) {
+    header.topbar { background: rgba(10,10,10,0.85); }
+  }
+  header.topbar .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+  }
+  header.topbar .brand-dot {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, var(--accent), #e6a4b4);
+    box-shadow: 0 2px 6px rgba(201,123,138,0.35);
+  }
+  header.topbar .meta {
+    color: var(--ink-soft);
+    font-size: 13px;
+  }
+
+  /* ===== Sidebar ===== */
+  aside.sidebar {
+    border-right: 1px solid var(--line);
+    background: var(--bg);
+    padding: 24px 16px 48px 24px;
+    position: sticky;
+    top: 49px;
+    align-self: start;
+    height: calc(100vh - 49px);
+    overflow-y: auto;
+  }
+  aside.sidebar .group {
+    margin-bottom: 24px;
+  }
+  aside.sidebar .group-title {
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--ink-faint);
+    font-weight: 600;
+    padding: 6px 8px;
+    margin-bottom: 4px;
+  }
+  aside.sidebar ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  aside.sidebar li a {
+    display: block;
+    padding: 6px 10px;
+    border-radius: 6px;
+    color: var(--ink-soft);
+    font-size: 14px;
+    line-height: 1.4;
+    border-left: 2px solid transparent;
+    margin-left: -2px;
+  }
+  aside.sidebar li a:hover {
+    color: var(--ink);
+    background: var(--bg-soft);
+    text-decoration: none;
+  }
+  aside.sidebar li a.active {
+    color: var(--ink);
+    border-left-color: var(--accent);
+    font-weight: 500;
+  }
+  aside.sidebar .nav-method {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 5px;
+    border-radius: 3px;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .nav-method.get { background: var(--pill-get); color: var(--pill-get-ink); }
+  .nav-method.post { background: var(--pill-post); color: var(--pill-post-ink); }
+
+  /* ===== Main content ===== */
+  main {
+    padding: 48px clamp(20px, 4vw, 56px) 96px;
+    max-width: calc(var(--content-max) + 80px);
+  }
+  main > section { margin-bottom: 64px; }
+
+  h1 {
+    font-size: 36px;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+    margin: 0 0 8px;
+  }
+  h2 {
+    font-size: 26px;
+    line-height: 1.3;
+    letter-spacing: -0.015em;
+    font-weight: 700;
+    margin: 56px 0 12px;
+    padding-top: 8px;
+    scroll-margin-top: 80px;
+  }
+  h3 {
+    font-size: 16px;
+    line-height: 1.4;
+    font-weight: 600;
+    margin: 28px 0 8px;
+    scroll-margin-top: 80px;
+  }
+  p { margin: 0 0 16px; color: var(--ink); }
+  .lede { font-size: 17px; color: var(--ink-soft); margin: 0 0 32px; }
+
+  hr {
+    border: none;
+    border-top: 1px solid var(--line);
+    margin: 48px 0;
+  }
+
+  /* ===== Endpoint header (method + path pill) ===== */
+  .endpoint {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 8px 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 13px;
+    margin: 4px 0 16px;
+  }
+  .method {
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+  .method.get { background: var(--pill-get); color: var(--pill-get-ink); }
+  .method.post { background: var(--pill-post); color: var(--pill-post-ink); }
+  .endpoint .path { color: var(--ink); }
+
+  /* ===== Tables ===== */
+  table.params {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 24px;
+    font-size: 14px;
+  }
+  table.params th, table.params td {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  table.params th {
+    font-weight: 600;
+    color: var(--ink);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: var(--bg-soft);
+  }
+  table.params td.name { font-family: ui-monospace, monospace; font-size: 13px; }
+  table.params td.type { color: var(--ink-soft); font-family: ui-monospace, monospace; font-size: 12px; }
+  table.params .req { color: #c97b8a; font-weight: 600; font-size: 11px; margin-left: 6px; }
+  table.params .opt { color: var(--ink-faint); font-size: 11px; margin-left: 6px; }
+
+  /* ===== Code blocks ===== */
+  .code {
+    background: var(--bg-code);
+    border-radius: var(--radius);
+    border: 1px solid var(--line-strong);
+    margin: 12px 0 20px;
+    overflow: hidden;
+  }
+  .code-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.02);
+  }
+  .code-head .label {
+    color: #b0b0b0;
+    font-size: 12px;
+    font-family: ui-monospace, monospace;
+  }
+  .copy-btn {
+    background: transparent;
+    color: #b0b0b0;
+    border: 1px solid #2a2a2a;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .copy-btn:hover { background: #1a1a1a; color: #ededed; }
+  .code pre {
+    margin: 0;
+    padding: 14px 16px;
+    overflow-x: auto;
+    color: var(--code-ink);
+    line-height: 1.55;
+  }
+  .code .k { color: #f8b4c0; }      /* keys / curl flags */
+  .code .s { color: #a5d6a7; }      /* strings */
+  .code .c { color: #6b7280; font-style: italic; } /* comments */
+  .code .n { color: #fcd34d; }      /* numbers */
+  .code .b { color: #93c5fd; }      /* booleans/null */
+
+  /* ===== Status pills ===== */
+  .status-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin: 4px 0 6px;
+  }
+  .status {
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .status.ok  { background: #dcfce7; color: #166534; }
+  .status.bad { background: #fee2e2; color: #991b1b; }
+  @media (prefers-color-scheme: dark) {
+    .status.ok  { background: #0c2818; color: #86efac; }
+    .status.bad { background: #2a1212; color: #fca5a5; }
+  }
+
+  /* ===== Callouts ===== */
+  .callout {
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    background: var(--bg-soft);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    margin: 16px 0 24px;
+    color: var(--ink-soft);
+    font-size: 14px;
+  }
+  .callout strong { color: var(--ink); }
+
+  ul.bullets { padding-left: 20px; color: var(--ink); }
+  ul.bullets li { margin-bottom: 4px; }
+
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-dot"></span>
+    Dziennik · API Docs
+  </div>
+  <div class="meta">v1 · 2026-06-23</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="group">
+      <div class="group-title">Wprowadzenie</div>
+      <ul>
+        <li><a href="#overview">Przegląd</a></li>
+        <li><a href="#auth">Autoryzacja</a></li>
+        <li><a href="#errors">Błędy &amp; limity</a></li>
+      </ul>
+    </div>
+
+    <div class="group">
+      <div class="group-title">API</div>
+      <ul>
+        <li><a href="#create"><span class="nav-method post">POST</span>Create</a></li>
+        <li><a href="#ask"><span class="nav-method post">POST</span>Ask</a></li>
+        <li><a href="#read"><span class="nav-method get">GET</span>Read</a></li>
+      </ul>
+    </div>
+
+    <div class="group">
+      <div class="group-title">Reference</div>
+      <ul>
+        <li><a href="#schema">Model danych</a></li>
+        <li><a href="#tokens">Tokeny API</a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <main>
+
+    <section id="overview">
+      <h1>Dziennik API</h1>
+      <p class="lede">
+        Trzy endpointy do pracy z dziennikiem programowo: <strong>dodaj wpis</strong>, <strong>zapytaj agenta</strong>, <strong>odczytaj dzień</strong>.
+        Per-user, autoryzowane długoterminowym tokenem.
+      </p>
+
+      <h3>Base URL</h3>
+      <div class="code">
+        <div class="code-head">
+          <span class="label">base</span>
+          <button class="copy-btn" data-copy="https://kkegymepatwufnemtldr.supabase.co/functions/v1">Copy</button>
+        </div>
+<pre><span class="s">https://kkegymepatwufnemtldr.supabase.co/functions/v1</span></pre>
+      </div>
+
+      <h3>Quick start</h3>
+      <div class="code">
+        <div class="code-head">
+          <span class="label">curl</span>
+          <button class="copy-btn" data-copy='curl -X POST $URL/add-entry -H "Authorization: Bearer dzn_xxx" -H "Content-Type: application/json" -d "{\"content\":\"hello\"}"'>Copy</button>
+        </div>
+<pre><span class="k">curl</span> -X POST $URL/add-entry \
+  -H <span class="s">"Authorization: Bearer dzn_xxx"</span> \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{"content":"hello"}'</span></pre>
+      </div>
+
+      <div class="callout">
+        Wszystkie endpointy są edge functions wdrożone na Supabase. Daty domyślne (<code>date</code> nie podane) używają strefy <code>Europe/Warsaw</code>.
+      </div>
+    </section>
+
+    <hr />
+
+    <section id="auth">
+      <h2>Autoryzacja</h2>
+      <p>Każde żądanie musi zawierać nagłówek <code>Authorization</code> z tokenem API. Tokeny mają format <code>dzn_&lt;base64url&gt;</code> i są związane z jednym kontem użytkownika.</p>
+
+      <div class="code">
+        <div class="code-head">
+          <span class="label">header</span>
+          <button class="copy-btn" data-copy="Authorization: Bearer dzn_xxx">Copy</button>
+        </div>
+<pre>Authorization: Bearer <span class="s">dzn_&lt;twoj_token&gt;</span></pre>
+      </div>
+
+      <p>Serwer akceptuje też Supabase JWT (używane przez frontend) — token API jest dla integracji i automatyzacji.</p>
+
+      <div class="callout">
+        <strong>Tokeny generuje się dziś ręcznie</strong> przez SQL w Supabase Studio (insert do <code>public.api_tokens</code> z <code>sha256(token)</code> w kolumnie <code>token_hash</code>). Endpoint do generacji z UI nie jest jeszcze gotowy.
+      </div>
+    </section>
+
+    <hr />
+
+    <section id="errors">
+      <h2>Błędy &amp; limity</h2>
+      <p>Wszystkie błędy zwracają JSON w formacie <code>{ "error": "..." }</code> z odpowiednim kodem HTTP.</p>
+
+      <table class="params">
+        <thead>
+          <tr><th>Status</th><th>Znaczenie</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="name">400</td><td>Niepoprawne body lub parametry (np. zły format daty, content poza 1–500 znakami).</td></tr>
+          <tr><td class="name">401</td><td>Brak nagłówka <code>Authorization</code>, zły token, lub token cofnięty.</td></tr>
+          <tr><td class="name">405</td><td>Zła metoda HTTP.</td></tr>
+          <tr><td class="name">409</td><td>Konflikt — dla <code>Create</code> oznacza osiągnięty limit 5 wpisów na dzień.</td></tr>
+          <tr><td class="name">500</td><td>Błąd po stronie serwera (np. brak sekretu, awaria bazy).</td></tr>
+          <tr><td class="name">502</td><td>Tylko <code>Ask</code> — model AI nieosiągalny.</td></tr>
+        </tbody>
+      </table>
+
+      <p>Limit twardy: <strong>5 wpisów na dzień kalendarzowy per user</strong>. Wymuszany w warstwie aplikacji.</p>
+    </section>
+
+    <hr />
+
+    <!-- ===================== CREATE ===================== -->
+    <section id="create">
+      <h2>Create — dodaj wpis</h2>
+      <div class="endpoint">
+        <span class="method post">POST</span>
+        <span class="path">/add-entry</span>
+      </div>
+      <p>Tworzy nowy wpis dla autoryzowanego użytkownika. Pozycja (1–5) przydzielana automatycznie. Opcjonalnie zapisuje też <code>mood</code> 1–5 dla danego dnia (mood żyje na poziomie dnia, nie wpisu).</p>
+
+      <h3>Body</h3>
+      <table class="params">
+        <thead><tr><th>Field</th><th>Type</th><th>Opis</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="name">content<span class="req">required</span></td>
+            <td class="type">string</td>
+            <td>Treść wpisu, 1–500 znaków po <code>trim()</code>.</td>
+          </tr>
+          <tr>
+            <td class="name">date<span class="opt">optional</span></td>
+            <td class="type">string (YYYY-MM-DD)</td>
+            <td>Data wpisu. Domyślnie dzisiaj w strefie <code>Europe/Warsaw</code>.</td>
+          </tr>
+          <tr>
+            <td class="name">mood<span class="opt">optional</span></td>
+            <td class="type">integer 1–5</td>
+            <td>Nastrój dnia. Upsert do <code>day_moods</code> (nadpisuje wcześniejszą wartość dla tego dnia).</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Request</h3>
+      <div class="code">
+        <div class="code-head">
+          <span class="label">curl</span>
+          <button class="copy-btn" data-copy='curl -X POST $URL/add-entry -H "Authorization: Bearer dzn_xxx" -H "Content-Type: application/json" -d "{\"content\":\"dobry dzien, zbudowalem skilla\",\"mood\":5}"'>Copy</button>
+        </div>
+<pre><span class="k">curl</span> -X POST $URL/add-entry \
+  -H <span class="s">"Authorization: Bearer dzn_xxx"</span> \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{
+    "content": "dobry dzien, zbudowalem skilla",
+    "mood": 5
+  }'</span></pre>
+      </div>
+
+      <h3>Response</h3>
+      <div class="status-row"><span class="status ok">200 OK</span><span style="color:var(--ink-soft);font-size:13px;">Wpis utworzony</span></div>
+      <div class="code">
+        <div class="code-head"><span class="label">json</span></div>
+<pre>{
+  <span class="k">"id"</span>: <span class="s">"d66aa9dd-8772-4b3f-9826-18a1762d154e"</span>,
+  <span class="k">"date"</span>: <span class="s">"2026-06-23"</span>,
+  <span class="k">"position"</span>: <span class="n">2</span>,
+  <span class="k">"content"</span>: <span class="s">"dobry dzien, zbudowalem skilla"</span>,
+  <span class="k">"mood"</span>: <span class="n">5</span>
+}</pre>
+      </div>
+
+      <div class="status-row"><span class="status bad">409 Conflict</span><span style="color:var(--ink-soft);font-size:13px;">Limit 5 wpisów na dzień</span></div>
+      <div class="code">
+        <div class="code-head"><span class="label">json</span></div>
+<pre>{
+  <span class="k">"error"</span>: <span class="s">"Limit 5 wpisow na dzien osiagniety."</span>,
+  <span class="k">"date"</span>: <span class="s">"2026-06-23"</span>,
+  <span class="k">"count"</span>: <span class="n">5</span>
+}</pre>
+      </div>
+    </section>
+
+    <hr />
+
+    <!-- ===================== ASK ===================== -->
+    <section id="ask">
+      <h2>Ask — zapytaj agenta</h2>
+      <div class="endpoint">
+        <span class="method post">POST</span>
+        <span class="path">/notes-chat</span>
+      </div>
+      <p>
+        Zadaje pytanie agentowi (Albert Einstein, model <code>grok-3</code>). Agent ma dostęp do tool-callu
+        <code>getNotesForRange</code> i może czytać Twoje wpisy z dowolnego zakresu dat.
+        Wpisy z dnia <code>date</code> (lub dzisiejszego) są wstrzykiwane do kontekstu automatycznie.
+      </p>
+
+      <h3>Body (single-shot)</h3>
+      <table class="params">
+        <thead><tr><th>Field</th><th>Type</th><th>Opis</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="name">question<span class="req">required</span></td>
+            <td class="type">string</td>
+            <td>Pojedyncze pytanie do agenta.</td>
+          </tr>
+          <tr>
+            <td class="name">date<span class="opt">optional</span></td>
+            <td class="type">string (YYYY-MM-DD)</td>
+            <td>"Aktywny" dzień — wpisy z tego dnia trafiają do kontekstu systemowego. Domyślnie dziś.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        Endpoint akceptuje też pełny format <code>{ messages, context }</code> używany przez UI z historią konwersacji.
+      </div>
+
+      <h3>Request</h3>
+      <div class="code">
+        <div class="code-head">
+          <span class="label">curl</span>
+          <button class="copy-btn" data-copy='curl -X POST $URL/notes-chat -H "Authorization: Bearer dzn_xxx" -H "Content-Type: application/json" -d "{\"question\":\"co robilem w zeszly piatek?\",\"date\":\"2026-06-19\"}"'>Copy</button>
+        </div>
+<pre><span class="k">curl</span> -X POST $URL/notes-chat \
+  -H <span class="s">"Authorization: Bearer dzn_xxx"</span> \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{
+    "question": "co robilem w zeszly piatek?",
+    "date": "2026-06-19"
+  }'</span></pre>
+      </div>
+
+      <h3>Response</h3>
+      <div class="status-row"><span class="status ok">200 OK</span></div>
+      <div class="code">
+        <div class="code-head"><span class="label">json</span></div>
+<pre>{
+  <span class="k">"reply"</span>: <span class="s">"W piątek 2026-06-19 zapisałeś dwa wpisy..."</span>,
+  <span class="k">"proposals"</span>: []
+}</pre>
+      </div>
+
+      <p><code>proposals</code> to lista propozycji nowych wpisów wygenerowanych przez agenta tool-callem <code>proposeNote</code>. Agent <em>nie zapisuje</em> wpisów sam — jeśli chcesz je przyjąć, użyj <a href="#create">Create</a>.</p>
+    </section>
+
+    <hr />
+
+    <!-- ===================== READ ===================== -->
+    <section id="read">
+      <h2>Read — odczytaj dzień</h2>
+      <div class="endpoint">
+        <span class="method get">GET</span>
+        <span class="path">/get-entry?date=YYYY-MM-DD</span>
+      </div>
+      <p>Zwraca wszystkie wpisy z danego dnia (posortowane po <code>position</code> rosnąco) oraz mood, jeśli ustawiony.</p>
+
+      <h3>Query</h3>
+      <table class="params">
+        <thead><tr><th>Param</th><th>Type</th><th>Opis</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="name">date<span class="opt">optional</span></td>
+            <td class="type">string (YYYY-MM-DD)</td>
+            <td>Data do odczytania. Domyślnie dzisiaj w strefie <code>Europe/Warsaw</code>.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Request</h3>
+      <div class="code">
+        <div class="code-head">
+          <span class="label">curl</span>
+          <button class="copy-btn" data-copy='curl "$URL/get-entry?date=2026-06-23" -H "Authorization: Bearer dzn_xxx"'>Copy</button>
+        </div>
+<pre><span class="k">curl</span> <span class="s">"$URL/get-entry?date=2026-06-23"</span> \
+  -H <span class="s">"Authorization: Bearer dzn_xxx"</span></pre>
+      </div>
+
+      <h3>Response</h3>
+      <div class="status-row"><span class="status ok">200 OK</span></div>
+      <div class="code">
+        <div class="code-head"><span class="label">json</span></div>
+<pre>{
+  <span class="k">"date"</span>: <span class="s">"2026-06-23"</span>,
+  <span class="k">"notes"</span>: [
+    {
+      <span class="k">"id"</span>: <span class="s">"3c131afc-..."</span>,
+      <span class="k">"position"</span>: <span class="n">1</span>,
+      <span class="k">"content"</span>: <span class="s">"Nastrój 5/5 — duma, zbudowałem skilla."</span>,
+      <span class="k">"created_at"</span>: <span class="s">"2026-06-23T07:18:57.552Z"</span>,
+      <span class="k">"updated_at"</span>: <span class="s">"2026-06-23T07:18:57.552Z"</span>
+    }
+  ],
+  <span class="k">"mood"</span>: <span class="n">5</span>
+}</pre>
+      </div>
+
+      <p><code>mood</code> jest <code>null</code>, jeśli dla danego dnia nie ustawiono nastroju.</p>
+    </section>
+
+    <hr />
+
+    <!-- ===================== REFERENCE ===================== -->
+    <section id="schema">
+      <h2>Model danych</h2>
+      <p>Dane żyją w Postgresie (Supabase). Każdy endpoint operuje wyłącznie na danych zalogowanego użytkownika — RLS lub jawny filtr po <code>user_id</code>.</p>
+
+      <h3>public.notes</h3>
+      <table class="params">
+        <thead><tr><th>Kolumna</th><th>Typ</th><th>Opis</th></tr></thead>
+        <tbody>
+          <tr><td class="name">id</td><td class="type">uuid</td><td>PK</td></tr>
+          <tr><td class="name">user_id</td><td class="type">uuid</td><td>FK do <code>auth.users</code></td></tr>
+          <tr><td class="name">date</td><td class="type">date</td><td>Data wpisu, YYYY-MM-DD</td></tr>
+          <tr><td class="name">position</td><td class="type">smallint</td><td>Pozycja 1–5 w obrębie dnia</td></tr>
+          <tr><td class="name">content</td><td class="type">text</td><td>Treść, ≤ 500 znaków</td></tr>
+          <tr><td class="name">created_at, updated_at</td><td class="type">timestamptz</td><td>Audyt</td></tr>
+        </tbody>
+      </table>
+
+      <h3>public.day_moods</h3>
+      <table class="params">
+        <thead><tr><th>Kolumna</th><th>Typ</th><th>Opis</th></tr></thead>
+        <tbody>
+          <tr><td class="name">user_id, date</td><td class="type">uuid, date</td><td>Klucz unikalny <code>(user_id, date)</code></td></tr>
+          <tr><td class="name">mood</td><td class="type">smallint 1–5</td><td>Nastrój dnia</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="tokens">
+      <h2>Tokeny API</h2>
+      <p>Tokeny są przechowywane jako <code>sha256(token)</code> w hex w kolumnie <code>token_hash</code>. Surowy token widoczny jest tylko w momencie generacji.</p>
+
+      <h3>Generacja tokenu (na razie ręcznie)</h3>
+      <div class="code">
+        <div class="code-head"><span class="label">powershell</span></div>
+<pre><span class="c"># 1. Wygeneruj losowy token i jego sha256</span>
+$bytes = New-Object byte[] 32
+[System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
+$b64 = [Convert]::ToBase64String($bytes).Replace(<span class="s">'+'</span>,<span class="s">'-'</span>).Replace(<span class="s">'/'</span>,<span class="s">'_'</span>).TrimEnd(<span class="s">'='</span>)
+$token = <span class="s">"dzn_$b64"</span>
+$sha = [System.Security.Cryptography.SHA256]::Create()
+$hash = ($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($token)) | % { $_.ToString(<span class="s">'x2'</span>) }) -join <span class="s">''</span>
+<span class="s">"TOKEN=$token"</span>; <span class="s">"HASH=$hash"</span></pre>
+      </div>
+
+      <div class="code">
+        <div class="code-head"><span class="label">sql</span></div>
+<pre><span class="c">-- 2. Wstaw rekord (Supabase Studio &gt; SQL Editor)</span>
+<span class="k">insert into</span> public.api_tokens (user_id, token_hash, name)
+<span class="k">values</span> (<span class="s">'&lt;twoje user_id&gt;'</span>, <span class="s">'&lt;HASH z kroku 1&gt;'</span>, <span class="s">'cli'</span>);</pre>
+      </div>
+
+      <p>Cofnięcie tokenu: <code>update api_tokens set revoked_at = now() where name = 'cli';</code></p>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  // Active nav highlighting
+  const navLinks = document.querySelectorAll('aside.sidebar a[href^="#"]');
+  const sections = Array.from(navLinks)
+    .map(a => document.getElementById(a.getAttribute('href').slice(1)))
+    .filter(Boolean);
+
+  function updateActive() {
+    const scrollPos = window.scrollY + 120;
+    let current = sections[0];
+    for (const s of sections) {
+      if (s.offsetTop <= scrollPos) current = s;
+    }
+    navLinks.forEach(a => {
+      a.classList.toggle('active', a.getAttribute('href') === '#' + current.id);
+    });
+  }
+  window.addEventListener('scroll', updateActive, { passive: true });
+  updateActive();
+
+  // Copy buttons
+  document.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const text = btn.getAttribute('data-copy') || '';
+      try {
+        await navigator.clipboard.writeText(text);
+        const orig = btn.textContent;
+        btn.textContent = 'Copied';
+        setTimeout(() => { btn.textContent = orig; }, 1200);
+      } catch {
+        btn.textContent = 'Press Ctrl+C';
+      }
+    });
+  });
+</script>
+
+</body>
+</html>

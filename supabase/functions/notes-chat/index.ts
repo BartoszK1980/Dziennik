@@ -1,20 +1,24 @@
 // Edge Function: notes-chat
 // xAI Grok via OpenAI-compatible API + tool-call loop.
-// Tools: getNotesForRange (reads notes via RLS), proposeNote (queues a proposal).
+// Tools: getNotesForRange (reads notes via RLS/explicit filter), proposeNote (queues a proposal).
+//
+// Akceptuje dwa ksztalty body:
+//   A) { messages: [...], context: {...} }              — uzywane przez front (history + lokalny kontekst)
+//   B) { question: string, date?: "YYYY-MM-DD" }        — single-shot dla integracji/API
+// Autoryzacja: Bearer JWT lub Bearer dzn_<token>.
 
-import { createClient } from "jsr:@supabase/supabase-js@2";
+import {
+  AuthError,
+  CORS_HEADERS,
+  isYmd,
+  jsonResponse,
+  resolveUser,
+  todayInWarsaw,
+} from "../_shared/auth.ts";
 
 const XAI_API_KEY = Deno.env.get("XAI_API_KEY");
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const MODEL = "grok-3";
 const MAX_TOOL_ITERATIONS = 6;
-
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
 
 const SYSTEM_PROMPT = `Jesteś Albertem Einsteinem — myślicielem ciekawym wzorców w czasie i w doświadczeniu człowieka.
 Czytasz dziennik użytkownika tak, jak fizyk patrzy na dane z eksperymentu: szukasz powtórzeń, korelacji, ukrytej struktury.
@@ -67,13 +71,6 @@ const TOOLS = [
     },
   },
 ];
-
-function jsonResponse(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-  });
-}
 
 function buildContextMessage(ctx: {
   today_ymd?: string;
@@ -131,10 +128,14 @@ Deno.serve(async (req) => {
     );
   }
 
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
-    return jsonResponse({ error: "Brak nagłówka Authorization" }, 401);
+  let auth;
+  try {
+    auth = await resolveUser(req);
+  } catch (e) {
+    const err = e as AuthError;
+    return jsonResponse({ error: err.message }, err.status ?? 401);
   }
+  const { userId, supabase } = auth;
 
   let body: {
     messages?: Array<{ role: string; content: string }>;
@@ -143,6 +144,8 @@ Deno.serve(async (req) => {
       active_date_ymd?: string;
       active_date_notes?: Array<{ position: number; content: string }>;
     };
+    question?: string;
+    date?: string;
   };
   try {
     body = await req.json();
@@ -150,26 +153,48 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Niepoprawny JSON" }, 400);
   }
 
-  const userMessages = Array.isArray(body.messages) ? body.messages : [];
-  if (userMessages.length === 0) {
-    return jsonResponse({ error: "Pusta historia wiadomości" }, 400);
-  }
+  // Single-shot mode: { question, date? } -> zmapuj na messages + context z dociagnietymi notatkami.
+  let userMessages: Array<{ role: string; content: string }>;
+  let context: {
+    today_ymd?: string;
+    active_date_ymd?: string;
+    active_date_notes?: Array<{ position: number; content: string }>;
+  };
 
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    global: { headers: { Authorization: authHeader } },
-  });
-
-  // Verify session is valid.
-  const { data: userData, error: userErr } = await supabase.auth.getUser();
-  if (userErr || !userData.user) {
-    return jsonResponse({ error: "Sesja wygasła lub niepoprawna" }, 401);
+  if (typeof body.question === "string" && body.question.trim().length > 0) {
+    const today = todayInWarsaw();
+    const activeDate = body.date ?? today;
+    if (!isYmd(activeDate)) {
+      return jsonResponse({ error: "date musi byc w formacie YYYY-MM-DD." }, 400);
+    }
+    const { data: dayNotes, error: notesErr } = await supabase
+      .from("notes")
+      .select("position, content")
+      .eq("user_id", userId)
+      .eq("date", activeDate)
+      .order("position", { ascending: true });
+    if (notesErr) {
+      return jsonResponse({ error: `notes lookup: ${notesErr.message}` }, 500);
+    }
+    userMessages = [{ role: "user", content: body.question.trim() }];
+    context = {
+      today_ymd: today,
+      active_date_ymd: activeDate,
+      active_date_notes: dayNotes ?? [],
+    };
+  } else {
+    userMessages = Array.isArray(body.messages) ? body.messages : [];
+    if (userMessages.length === 0) {
+      return jsonResponse({ error: "Pusta historia wiadomosci" }, 400);
+    }
+    context = body.context ?? {};
   }
 
   const proposals: Array<{ date: string; content: string }> = [];
 
   const messages: Array<Record<string, unknown>> = [
     { role: "system", content: SYSTEM_PROMPT },
-    { role: "system", content: buildContextMessage(body.context ?? {}) },
+    { role: "system", content: buildContextMessage(context) },
     ...userMessages.map((m) => ({ role: m.role, content: m.content })),
   ];
 
@@ -180,7 +205,7 @@ Deno.serve(async (req) => {
     } catch (e) {
       console.error("xAI error:", e);
       return jsonResponse(
-        { error: `Asystent jest chwilowo niedostępny: ${(e as Error).message}` },
+        { error: `Asystent jest chwilowo niedostepny: ${(e as Error).message}` },
         502,
       );
     }
@@ -213,12 +238,14 @@ Deno.serve(async (req) => {
       if (name === "getNotesForRange") {
         const from = String(args.from ?? "");
         const to = String(args.to ?? "");
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to)) {
-          toolResult = { error: "Daty muszą być w formacie YYYY-MM-DD." };
+        if (!isYmd(from) || !isYmd(to)) {
+          toolResult = { error: "Daty musza byc w formacie YYYY-MM-DD." };
         } else {
+          // Jawny filtr na user_id — dziala w obu trybach auth (JWT i service_role).
           const { data, error } = await supabase
             .from("notes")
             .select("date, position, content")
+            .eq("user_id", userId)
             .gte("date", from)
             .lte("date", to)
             .order("date", { ascending: true })
@@ -232,13 +259,13 @@ Deno.serve(async (req) => {
       } else if (name === "proposeNote") {
         const date = String(args.date ?? "");
         const content = String(args.content ?? "").trim();
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-          toolResult = { error: "date musi być w formacie YYYY-MM-DD." };
+        if (!isYmd(date)) {
+          toolResult = { error: "date musi byc w formacie YYYY-MM-DD." };
         } else if (content.length < 1 || content.length > 500) {
-          toolResult = { error: "content musi mieć 1–500 znaków." };
+          toolResult = { error: "content musi miec 1-500 znakow." };
         } else {
           proposals.push({ date, content });
-          toolResult = { queued: true, accepted: false, note: "Propozycja czeka na akceptację użytkownika." };
+          toolResult = { queued: true, accepted: false, note: "Propozycja czeka na akceptacje uzytkownika." };
         }
       } else {
         toolResult = { error: `Nieznany tool: ${name}` };
@@ -252,14 +279,14 @@ Deno.serve(async (req) => {
     }
   }
 
-  // Limit pętli przekroczony — zwracamy ostatnią treść asystenta (jeśli jest) lub komunikat.
+  // Limit petli przekroczony — zwracamy ostatnia tresc asystenta (jesli jest) lub komunikat.
   const lastAssistant = [...messages].reverse().find(
     (m) => (m as { role: string }).role === "assistant",
   ) as { content?: string } | undefined;
   return jsonResponse({
     reply:
       lastAssistant?.content ??
-      "Przekroczono limit wywołań narzędzi. Zadaj pytanie bardziej szczegółowo.",
+      "Przekroczono limit wywolan narzedzi. Zadaj pytanie bardziej szczegolowo.",
     proposals,
     warning: "max_tool_iterations_reached",
   });

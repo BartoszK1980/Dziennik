@@ -15,3 +15,6 @@ dist/
 build/
 .env
 .env.local
+
+# Skill credentials (zawiera sb_secret_* — nigdy nie commitować)
+.claude/skills/*/credentials.local.json
