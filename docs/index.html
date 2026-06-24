@@ -385,7 +385,8 @@
 
   <div class="top-actions">
     <span class="user-email" id="user-email" hidden></span>
-    <button class="btn primary" id="token-btn">Generuj token API · v5</button>
+    <span id="js-status" style="font-size:11px;color:#c00;font-weight:600;margin-right:10px;">JS: ❌ off</span>
+    <button class="btn primary" id="token-btn">Generuj token API · v6</button>
     <button class="btn-link" id="logout-btn" hidden>wyloguj</button>
   </div>
 </header>
@@ -964,6 +965,12 @@
     else document.addEventListener("DOMContentLoaded", fn);
   }
   onReady(function () {
+    // Marker: bootstrap script sie wykonal
+    var status = document.getElementById("js-status");
+    if (status) {
+      status.textContent = "JS: ✓ ready";
+      status.style.color = "#166534";
+    }
     var btn = document.getElementById("token-btn");
     if (!btn) return;
     btn.addEventListener("click", function () {
