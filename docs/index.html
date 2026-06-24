@@ -1163,19 +1163,20 @@ window.__toggleTokenPanel = async function () {
   showPane("loading");
   __setStatus("JS: panel pokazany (loading)", "#166534");
 
-  // Async: sprawdz sesje z 5s timeoutem
+  // Async: sprawdz sesje z 2s timeoutem. Timeout = traktuj jako brak sesji.
   let session = null;
   try {
-    const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error("getSession timeout 5s")), 5000));
+    const timeout = new Promise((res) => setTimeout(() => res({ data: { session: null }, __timeout: true }), 2000));
     const result = await Promise.race([supabase.auth.getSession(), timeout]);
     session = result?.data?.session ?? null;
-    __setStatus("JS: sesja " + (session ? "OK (" + session.user.email + ")" : "brak"), "#166534");
+    if (result?.__timeout) {
+      __setStatus("JS: getSession timeout -> traktuje jako brak sesji", "#a07000");
+    } else {
+      __setStatus("JS: sesja " + (session ? "OK (" + session.user.email + ")" : "brak"), "#166534");
+    }
   } catch (e) {
-    __setStatus("JS: blad getSession: " + (e?.message || e), "#c00");
-    document.getElementById("token-error-msg").textContent =
-      "Nie udalo sie sprawdzic sesji: " + (e?.message || e) + "\n\nMozliwe ze blokada CDN Supabase. Sprobuj wylaczyc adblocker.";
-    showPane("error");
-    return;
+    __setStatus("JS: getSession blad -> anon: " + (e?.message || e), "#a07000");
+    session = null;
   }
 
   if (!session) {
