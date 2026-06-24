@@ -965,7 +965,6 @@
     else document.addEventListener("DOMContentLoaded", fn);
   }
   onReady(function () {
-    // Marker: bootstrap script sie wykonal
     var status = document.getElementById("js-status");
     if (status) {
       status.textContent = "JS: ✓ ready";
@@ -973,17 +972,21 @@
     }
     var btn = document.getElementById("token-btn");
     if (!btn) return;
+    var clicks = 0;
     btn.addEventListener("click", function () {
+      clicks++;
+      if (status) status.textContent = "JS: click #" + clicks + " — " +
+        (typeof window.__toggleTokenPanel === "function" ? "modul OK, wywoluje…" : "MODUL NIEZALADOWANY");
       if (typeof window.__toggleTokenPanel === "function") {
         try { window.__toggleTokenPanel(); }
-        catch (e) { alert("Blad otwierania generatora: " + (e && e.message ? e.message : e)); }
+        catch (e) {
+          if (status) {
+            status.textContent = "JS: blad: " + (e && e.message ? e.message : e);
+            status.style.color = "#c00";
+          }
+        }
       } else {
-        alert("Skrypt generatora (modul JS z Supabase) nie zaladowal sie.\n\n" +
-              "Najczestsza przyczyna: VPN, adblocker lub rozszerzenie typu NoScript blokuje cdn.jsdelivr.net.\n\n" +
-              "Sprobuj:\n" +
-              "1. Wylacz VPN i odswiez (Ctrl+Shift+R)\n" +
-              "2. Wylacz adblocker dla tej strony\n" +
-              "3. Otworz w innej przegladarce");
+        if (status) status.style.color = "#c00";
       }
     });
   });
