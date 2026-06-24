@@ -1163,28 +1163,39 @@ window.__toggleTokenPanel = async function () {
   showPane("loading");
   __setStatus("JS: panel pokazany (loading)", "#166534");
 
-  // Async: sprawdz sesje z 2s timeoutem. Timeout = traktuj jako brak sesji.
-  let session = null;
+  // Czytaj token bezposrednio z localStorage (omija hangujace supabase.auth.getSession)
+  let accessToken = null;
+  let userEmail = null;
   try {
-    const timeout = new Promise((res) => setTimeout(() => res({ data: { session: null }, __timeout: true }), 2000));
-    const result = await Promise.race([supabase.auth.getSession(), timeout]);
-    session = result?.data?.session ?? null;
-    if (result?.__timeout) {
-      __setStatus("JS: getSession timeout -> traktuje jako brak sesji", "#a07000");
-    } else {
-      __setStatus("JS: sesja " + (session ? "OK (" + session.user.email + ")" : "brak"), "#166534");
+    // Supabase JS v2 zapisuje sesje pod kluczem sb-<project_ref>-auth-token
+    const projectRef = "kkegymepatwufnemtldr";
+    const raw = localStorage.getItem("sb-" + projectRef + "-auth-token");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      const tok = parsed?.access_token ?? parsed?.currentSession?.access_token;
+      const expiresAt = parsed?.expires_at ?? parsed?.currentSession?.expires_at;
+      const user = parsed?.user ?? parsed?.currentSession?.user;
+      const now = Math.floor(Date.now() / 1000);
+      if (tok && (!expiresAt || expiresAt > now)) {
+        accessToken = tok;
+        userEmail = user?.email ?? "(nieznany)";
+      } else if (tok && expiresAt && expiresAt <= now) {
+        __setStatus("JS: sesja wygasla — zaloguj sie ponownie", "#c00");
+      }
     }
   } catch (e) {
-    __setStatus("JS: getSession blad -> anon: " + (e?.message || e), "#a07000");
-    session = null;
+    __setStatus("JS: localStorage zablokowany: " + (e?.message || e), "#c00");
   }
 
-  if (!session) {
-    showPane("anon");
-  } else {
+  if (accessToken) {
+    __setStatus("JS: sesja z localStorage OK (" + userEmail + ")", "#166534");
+    window.__cachedAccessToken = accessToken;
     document.getElementById("token-name-input").value = "";
     showPane("form");
     setTimeout(() => document.getElementById("token-name-input").focus(), 0);
+  } else {
+    __setStatus("JS: brak sesji w localStorage — wymagane logowanie", "#a07000");
+    showPane("anon");
   }
 };
 
@@ -1197,15 +1208,15 @@ window.__generateToken = async function () {
   showPane("loading");
 
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    const accessToken = window.__cachedAccessToken;
+    if (!accessToken) {
       showPane("anon");
       return;
     }
     const res = await fetch(`${SUPABASE_URL}/functions/v1/create-api-token`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${session.access_token}`,
+        Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ name }),
