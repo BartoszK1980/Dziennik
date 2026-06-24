@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Dziennik · API Docs</title>
+<title>Dziennik · Docs</title>
 <style>
   :root {
     --bg: #ffffff;
@@ -24,10 +24,11 @@
     --pill-get-ink: #075985;
     --pill-post: #dcfce7;
     --pill-post-ink: #166534;
+    --pill-tool: #fef3c7;
+    --pill-tool-ink: #92400e;
     --radius: 8px;
     --radius-lg: 12px;
     --sidebar-w: 260px;
-    --toc-w: 220px;
     --content-max: 760px;
   }
 
@@ -45,6 +46,8 @@
       --pill-get-ink: #7dd3fc;
       --pill-post: #0c2818;
       --pill-post-ink: #86efac;
+      --pill-tool: #2a1f0a;
+      --pill-tool-ink: #fbbf24;
     }
   }
 
@@ -72,50 +75,119 @@
     font-size: 0.88em;
   }
 
-  /* ===== Layout ===== */
-  .layout {
-    display: grid;
-    grid-template-columns: var(--sidebar-w) 1fr;
-    min-height: 100vh;
-  }
-  @media (max-width: 900px) {
-    .layout { grid-template-columns: 1fr; }
-    aside.sidebar { display: none; }
-  }
-
+  /* ===== Topbar (shared across tabs) ===== */
   header.topbar {
     position: sticky;
     top: 0;
-    z-index: 20;
-    grid-column: 1 / -1;
+    z-index: 30;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 12px 24px;
+    gap: 24px;
+    padding: 10px 24px;
     background: rgba(255,255,255,0.85);
     backdrop-filter: saturate(180%) blur(12px);
     border-bottom: 1px solid var(--line);
+    min-height: 56px;
   }
   @media (prefers-color-scheme: dark) {
     header.topbar { background: rgba(10,10,10,0.85); }
   }
-  header.topbar .brand {
+  .brand {
     display: flex;
     align-items: center;
     gap: 10px;
     font-weight: 600;
     letter-spacing: 0.2px;
+    flex-shrink: 0;
   }
-  header.topbar .brand-dot {
+  .brand-dot {
     width: 22px;
     height: 22px;
     border-radius: 6px;
     background: linear-gradient(135deg, var(--accent), #e6a4b4);
     box-shadow: 0 2px 6px rgba(201,123,138,0.35);
   }
-  header.topbar .meta {
+  .brand a:hover { text-decoration: none; }
+
+  /* Tabs API / MCP */
+  .tabs {
+    display: flex;
+    gap: 2px;
+    margin-left: 12px;
+  }
+  .tabs button {
+    background: transparent;
+    border: none;
     color: var(--ink-soft);
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px 14px;
+    border-radius: 7px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.12s ease;
+  }
+  .tabs button:hover { color: var(--ink); background: var(--bg-soft); }
+  .tabs button.active { color: var(--ink); background: var(--bg-soft); font-weight: 600; }
+
+  .top-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .top-actions .user-email {
     font-size: 13px;
+    color: var(--ink-soft);
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .btn {
+    border: 1px solid var(--line-strong);
+    background: var(--bg);
+    color: var(--ink);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 7px 12px;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.12s ease;
+  }
+  .btn:hover { background: var(--bg-soft); }
+  .btn.primary {
+    background: var(--ink);
+    color: var(--bg);
+    border-color: var(--ink);
+  }
+  .btn.primary:hover { opacity: 0.85; background: var(--ink); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-link {
+    background: none;
+    border: none;
+    color: var(--ink-soft);
+    text-decoration: underline;
+    font-size: 12px;
+    padding: 0;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .btn-link:hover { color: var(--ink); }
+
+  /* ===== Layout ===== */
+  .layout {
+    display: grid;
+    grid-template-columns: var(--sidebar-w) 1fr;
+    min-height: calc(100vh - 56px);
+  }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    aside.sidebar { display: none; }
+    header.topbar { gap: 12px; padding: 10px 16px; }
+    .tabs button { padding: 6px 10px; font-size: 13px; }
+    .top-actions .user-email { display: none; }
   }
 
   /* ===== Sidebar ===== */
@@ -124,14 +196,12 @@
     background: var(--bg);
     padding: 24px 16px 48px 24px;
     position: sticky;
-    top: 49px;
+    top: 56px;
     align-self: start;
-    height: calc(100vh - 49px);
+    height: calc(100vh - 56px);
     overflow-y: auto;
   }
-  aside.sidebar .group {
-    margin-bottom: 24px;
-  }
+  aside.sidebar .group { margin-bottom: 24px; }
   aside.sidebar .group-title {
     text-transform: uppercase;
     font-size: 11px;
@@ -141,11 +211,7 @@
     padding: 6px 8px;
     margin-bottom: 4px;
   }
-  aside.sidebar ul {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
+  aside.sidebar ul { list-style: none; margin: 0; padding: 0; }
   aside.sidebar li a {
     display: block;
     padding: 6px 10px;
@@ -156,16 +222,8 @@
     border-left: 2px solid transparent;
     margin-left: -2px;
   }
-  aside.sidebar li a:hover {
-    color: var(--ink);
-    background: var(--bg-soft);
-    text-decoration: none;
-  }
-  aside.sidebar li a.active {
-    color: var(--ink);
-    border-left-color: var(--accent);
-    font-weight: 500;
-  }
+  aside.sidebar li a:hover { color: var(--ink); background: var(--bg-soft); text-decoration: none; }
+  aside.sidebar li a.active { color: var(--ink); border-left-color: var(--accent); font-weight: 500; }
   aside.sidebar .nav-method {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 10px;
@@ -177,6 +235,7 @@
   }
   .nav-method.get { background: var(--pill-get); color: var(--pill-get-ink); }
   .nav-method.post { background: var(--pill-post); color: var(--pill-post-ink); }
+  .nav-method.tool { background: var(--pill-tool); color: var(--pill-tool-ink); }
 
   /* ===== Main content ===== */
   main {
@@ -185,39 +244,14 @@
   }
   main > section { margin-bottom: 64px; }
 
-  h1 {
-    font-size: 36px;
-    line-height: 1.2;
-    letter-spacing: -0.02em;
-    font-weight: 700;
-    margin: 0 0 8px;
-  }
-  h2 {
-    font-size: 26px;
-    line-height: 1.3;
-    letter-spacing: -0.015em;
-    font-weight: 700;
-    margin: 56px 0 12px;
-    padding-top: 8px;
-    scroll-margin-top: 80px;
-  }
-  h3 {
-    font-size: 16px;
-    line-height: 1.4;
-    font-weight: 600;
-    margin: 28px 0 8px;
-    scroll-margin-top: 80px;
-  }
+  h1 { font-size: 36px; line-height: 1.2; letter-spacing: -0.02em; font-weight: 700; margin: 0 0 8px; }
+  h2 { font-size: 26px; line-height: 1.3; letter-spacing: -0.015em; font-weight: 700; margin: 56px 0 12px; padding-top: 8px; scroll-margin-top: 80px; }
+  h3 { font-size: 16px; line-height: 1.4; font-weight: 600; margin: 28px 0 8px; scroll-margin-top: 80px; }
   p { margin: 0 0 16px; color: var(--ink); }
   .lede { font-size: 17px; color: var(--ink-soft); margin: 0 0 32px; }
+  hr { border: none; border-top: 1px solid var(--line); margin: 48px 0; }
 
-  hr {
-    border: none;
-    border-top: 1px solid var(--line);
-    margin: 48px 0;
-  }
-
-  /* ===== Endpoint header (method + path pill) ===== */
+  /* ===== Endpoint header ===== */
   .endpoint {
     display: inline-flex;
     align-items: center;
@@ -239,94 +273,34 @@
   }
   .method.get { background: var(--pill-get); color: var(--pill-get-ink); }
   .method.post { background: var(--pill-post); color: var(--pill-post-ink); }
+  .method.tool { background: var(--pill-tool); color: var(--pill-tool-ink); }
   .endpoint .path { color: var(--ink); }
 
   /* ===== Tables ===== */
-  table.params {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 12px 0 24px;
-    font-size: 14px;
-  }
-  table.params th, table.params td {
-    text-align: left;
-    padding: 10px 12px;
-    border-bottom: 1px solid var(--line);
-    vertical-align: top;
-  }
-  table.params th {
-    font-weight: 600;
-    color: var(--ink);
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    background: var(--bg-soft);
-  }
+  table.params { width: 100%; border-collapse: collapse; margin: 12px 0 24px; font-size: 14px; }
+  table.params th, table.params td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.params th { font-weight: 600; color: var(--ink); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; background: var(--bg-soft); }
   table.params td.name { font-family: ui-monospace, monospace; font-size: 13px; }
   table.params td.type { color: var(--ink-soft); font-family: ui-monospace, monospace; font-size: 12px; }
   table.params .req { color: #c97b8a; font-weight: 600; font-size: 11px; margin-left: 6px; }
   table.params .opt { color: var(--ink-faint); font-size: 11px; margin-left: 6px; }
 
   /* ===== Code blocks ===== */
-  .code {
-    background: var(--bg-code);
-    border-radius: var(--radius);
-    border: 1px solid var(--line-strong);
-    margin: 12px 0 20px;
-    overflow: hidden;
-  }
-  .code-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 12px;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-    background: rgba(255,255,255,0.02);
-  }
-  .code-head .label {
-    color: #b0b0b0;
-    font-size: 12px;
-    font-family: ui-monospace, monospace;
-  }
-  .copy-btn {
-    background: transparent;
-    color: #b0b0b0;
-    border: 1px solid #2a2a2a;
-    border-radius: 4px;
-    padding: 2px 8px;
-    font-size: 11px;
-    cursor: pointer;
-    font-family: inherit;
-  }
+  .code { background: var(--bg-code); border-radius: var(--radius); border: 1px solid var(--line-strong); margin: 12px 0 20px; overflow: hidden; }
+  .code-head { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02); }
+  .code-head .label { color: #b0b0b0; font-size: 12px; font-family: ui-monospace, monospace; }
+  .copy-btn { background: transparent; color: #b0b0b0; border: 1px solid #2a2a2a; border-radius: 4px; padding: 2px 8px; font-size: 11px; cursor: pointer; font-family: inherit; }
   .copy-btn:hover { background: #1a1a1a; color: #ededed; }
-  .code pre {
-    margin: 0;
-    padding: 14px 16px;
-    overflow-x: auto;
-    color: var(--code-ink);
-    line-height: 1.55;
-  }
-  .code .k { color: #f8b4c0; }      /* keys / curl flags */
-  .code .s { color: #a5d6a7; }      /* strings */
-  .code .c { color: #6b7280; font-style: italic; } /* comments */
-  .code .n { color: #fcd34d; }      /* numbers */
-  .code .b { color: #93c5fd; }      /* booleans/null */
+  .code pre { margin: 0; padding: 14px 16px; overflow-x: auto; color: var(--code-ink); line-height: 1.55; }
+  .code .k { color: #f8b4c0; }
+  .code .s { color: #a5d6a7; }
+  .code .c { color: #6b7280; font-style: italic; }
+  .code .n { color: #fcd34d; }
+  .code .b { color: #93c5fd; }
 
   /* ===== Status pills ===== */
-  .status-row {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-    margin: 4px 0 6px;
-  }
-  .status {
-    font-family: ui-monospace, monospace;
-    font-size: 12px;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-weight: 600;
-    flex-shrink: 0;
-  }
+  .status-row { display: flex; align-items: baseline; gap: 10px; margin: 4px 0 6px; }
+  .status { font-family: ui-monospace, monospace; font-size: 12px; padding: 2px 8px; border-radius: 4px; font-weight: 600; flex-shrink: 0; }
   .status.ok  { background: #dcfce7; color: #166534; }
   .status.bad { background: #fee2e2; color: #991b1b; }
   @media (prefers-color-scheme: dark) {
@@ -335,21 +309,63 @@
   }
 
   /* ===== Callouts ===== */
-  .callout {
-    border: 1px solid var(--line);
-    border-left: 3px solid var(--accent);
-    background: var(--bg-soft);
-    border-radius: var(--radius);
-    padding: 12px 16px;
-    margin: 16px 0 24px;
-    color: var(--ink-soft);
-    font-size: 14px;
-  }
+  .callout { border: 1px solid var(--line); border-left: 3px solid var(--accent); background: var(--bg-soft); border-radius: var(--radius); padding: 12px 16px; margin: 16px 0 24px; color: var(--ink-soft); font-size: 14px; }
   .callout strong { color: var(--ink); }
 
   ul.bullets { padding-left: 20px; color: var(--ink); }
   ul.bullets li { margin-bottom: 4px; }
 
+  /* ===== Modal (token generator) ===== */
+  .modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.55);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100;
+    padding: 20px;
+  }
+  .modal {
+    background: var(--bg);
+    color: var(--ink);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    max-width: 540px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+  .modal h3 { margin: 0 0 6px; font-size: 18px; }
+  .modal p { font-size: 14px; color: var(--ink-soft); margin: 0 0 16px; }
+  .modal label { display: block; font-size: 12px; color: var(--ink-soft); margin-bottom: 4px; }
+  .modal input[type="text"] {
+    width: 100%; padding: 10px 12px;
+    border: 1px solid var(--line-strong); border-radius: var(--radius);
+    background: var(--bg); color: var(--ink); font: inherit; font-size: 14px;
+    margin-bottom: 16px;
+  }
+  .modal .token-display {
+    display: flex; gap: 8px;
+    background: var(--bg-code); border-radius: var(--radius); padding: 12px;
+    margin: 12px 0;
+    font-family: ui-monospace, monospace; font-size: 12px;
+    color: var(--code-string); word-break: break-all;
+  }
+  .modal .token-display .token-text { flex: 1; }
+  .modal .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+  .modal .warn { color: #c97b8a; font-weight: 500; }
+  .login-hint { text-align: center; padding: 16px 0; }
+  .login-hint a {
+    display: inline-block; margin-top: 10px;
+    padding: 8px 16px; background: var(--ink); color: var(--bg);
+    border-radius: var(--radius); text-decoration: none; font-weight: 500;
+  }
+  .login-hint a:hover { text-decoration: none; opacity: 0.85; }
+
+  /* Hide content by default; tab switcher toggles */
+  .tab-pane { display: none; }
+  .tab-pane.active { display: grid; grid-template-columns: var(--sidebar-w) 1fr; min-height: calc(100vh - 56px); }
+  @media (max-width: 900px) {
+    .tab-pane.active { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
@@ -357,12 +373,24 @@
 <header class="topbar">
   <div class="brand">
     <span class="brand-dot"></span>
-    Dziennik · API Docs
+    <a href="../">Dziennik</a>
+    <span style="color:var(--ink-faint);font-weight:400;margin-left:6px;">· Docs</span>
   </div>
-  <div class="meta">v1 · 2026-06-23</div>
+
+  <nav class="tabs">
+    <button data-tab="api" class="active">API</button>
+    <button data-tab="mcp">MCP</button>
+  </nav>
+
+  <div class="top-actions">
+    <span class="user-email" id="user-email" hidden></span>
+    <button class="btn primary" id="token-btn">Generuj token API</button>
+    <button class="btn-link" id="logout-btn" hidden>wyloguj</button>
+  </div>
 </header>
 
-<div class="layout">
+<!-- ========================= API TAB ========================= -->
+<div class="tab-pane active" id="tab-api">
   <aside class="sidebar">
     <div class="group">
       <div class="group-title">Wprowadzenie</div>
@@ -392,7 +420,6 @@
   </aside>
 
   <main>
-
     <section id="overview">
       <h1>Dziennik API</h1>
       <p class="lede">
@@ -443,7 +470,7 @@
       <p>Serwer akceptuje też Supabase JWT (używane przez frontend) — token API jest dla integracji i automatyzacji.</p>
 
       <div class="callout">
-        <strong>Tokeny generuje się dziś ręcznie</strong> przez SQL w Supabase Studio (insert do <code>public.api_tokens</code> z <code>sha256(token)</code> w kolumnie <code>token_hash</code>). Endpoint do generacji z UI nie jest jeszcze gotowy.
+        Token wygenerujesz przyciskiem <strong>„Generuj token API"</strong> w górnym pasku (wymaga zalogowania). Plaintext widoczny jest <strong>tylko raz</strong>, w momencie wygenerowania.
       </div>
     </section>
 
@@ -454,52 +481,37 @@
       <p>Wszystkie błędy zwracają JSON w formacie <code>{ "error": "..." }</code> z odpowiednim kodem HTTP.</p>
 
       <table class="params">
-        <thead>
-          <tr><th>Status</th><th>Znaczenie</th></tr>
-        </thead>
+        <thead><tr><th>Status</th><th>Znaczenie</th></tr></thead>
         <tbody>
           <tr><td class="name">400</td><td>Niepoprawne body lub parametry (np. zły format daty, content poza 1–500 znakami).</td></tr>
           <tr><td class="name">401</td><td>Brak nagłówka <code>Authorization</code>, zły token, lub token cofnięty.</td></tr>
           <tr><td class="name">405</td><td>Zła metoda HTTP.</td></tr>
           <tr><td class="name">409</td><td>Konflikt — dla <code>Create</code> oznacza osiągnięty limit 5 wpisów na dzień.</td></tr>
-          <tr><td class="name">500</td><td>Błąd po stronie serwera (np. brak sekretu, awaria bazy).</td></tr>
+          <tr><td class="name">500</td><td>Błąd po stronie serwera.</td></tr>
           <tr><td class="name">502</td><td>Tylko <code>Ask</code> — model AI nieosiągalny.</td></tr>
         </tbody>
       </table>
 
-      <p>Limit twardy: <strong>5 wpisów na dzień kalendarzowy per user</strong>. Wymuszany w warstwie aplikacji.</p>
+      <p>Limit twardy: <strong>5 wpisów na dzień kalendarzowy per user</strong>.</p>
     </section>
 
     <hr />
 
-    <!-- ===================== CREATE ===================== -->
     <section id="create">
       <h2>Create — dodaj wpis</h2>
       <div class="endpoint">
         <span class="method post">POST</span>
         <span class="path">/add-entry</span>
       </div>
-      <p>Tworzy nowy wpis dla autoryzowanego użytkownika. Pozycja (1–5) przydzielana automatycznie. Opcjonalnie zapisuje też <code>mood</code> 1–5 dla danego dnia (mood żyje na poziomie dnia, nie wpisu).</p>
+      <p>Tworzy nowy wpis dla autoryzowanego użytkownika. Pozycja (1–5) przydzielana automatycznie. Opcjonalnie zapisuje też <code>mood</code> 1–5 dla danego dnia.</p>
 
       <h3>Body</h3>
       <table class="params">
         <thead><tr><th>Field</th><th>Type</th><th>Opis</th></tr></thead>
         <tbody>
-          <tr>
-            <td class="name">content<span class="req">required</span></td>
-            <td class="type">string</td>
-            <td>Treść wpisu, 1–500 znaków po <code>trim()</code>.</td>
-          </tr>
-          <tr>
-            <td class="name">date<span class="opt">optional</span></td>
-            <td class="type">string (YYYY-MM-DD)</td>
-            <td>Data wpisu. Domyślnie dzisiaj w strefie <code>Europe/Warsaw</code>.</td>
-          </tr>
-          <tr>
-            <td class="name">mood<span class="opt">optional</span></td>
-            <td class="type">integer 1–5</td>
-            <td>Nastrój dnia. Upsert do <code>day_moods</code> (nadpisuje wcześniejszą wartość dla tego dnia).</td>
-          </tr>
+          <tr><td class="name">content<span class="req">required</span></td><td class="type">string</td><td>Treść wpisu, 1–500 znaków po <code>trim()</code>.</td></tr>
+          <tr><td class="name">date<span class="opt">optional</span></td><td class="type">string (YYYY-MM-DD)</td><td>Domyślnie dzisiaj w strefie <code>Europe/Warsaw</code>.</td></tr>
+          <tr><td class="name">mood<span class="opt">optional</span></td><td class="type">integer 1–5</td><td>Nastrój dnia. Upsert do <code>day_moods</code>.</td></tr>
         </tbody>
       </table>
 
@@ -507,7 +519,7 @@
       <div class="code">
         <div class="code-head">
           <span class="label">curl</span>
-          <button class="copy-btn" data-copy='curl -X POST $URL/add-entry -H "Authorization: Bearer dzn_xxx" -H "Content-Type: application/json" -d "{\"content\":\"dobry dzien, zbudowalem skilla\",\"mood\":5}"'>Copy</button>
+          <button class="copy-btn" data-copy='curl -X POST $URL/add-entry -H "Authorization: Bearer dzn_xxx" -H "Content-Type: application/json" -d "{\"content\":\"dobry dzien\",\"mood\":5}"'>Copy</button>
         </div>
 <pre><span class="k">curl</span> -X POST $URL/add-entry \
   -H <span class="s">"Authorization: Bearer dzn_xxx"</span> \
@@ -523,7 +535,7 @@
       <div class="code">
         <div class="code-head"><span class="label">json</span></div>
 <pre>{
-  <span class="k">"id"</span>: <span class="s">"d66aa9dd-8772-4b3f-9826-18a1762d154e"</span>,
+  <span class="k">"id"</span>: <span class="s">"d66aa9dd-..."</span>,
   <span class="k">"date"</span>: <span class="s">"2026-06-23"</span>,
   <span class="k">"position"</span>: <span class="n">2</span>,
   <span class="k">"content"</span>: <span class="s">"dobry dzien, zbudowalem skilla"</span>,
@@ -544,45 +556,30 @@
 
     <hr />
 
-    <!-- ===================== ASK ===================== -->
     <section id="ask">
       <h2>Ask — zapytaj agenta</h2>
       <div class="endpoint">
         <span class="method post">POST</span>
         <span class="path">/notes-chat</span>
       </div>
-      <p>
-        Zadaje pytanie agentowi (Albert Einstein, model <code>grok-3</code>). Agent ma dostęp do tool-callu
-        <code>getNotesForRange</code> i może czytać Twoje wpisy z dowolnego zakresu dat.
-        Wpisy z dnia <code>date</code> (lub dzisiejszego) są wstrzykiwane do kontekstu automatycznie.
-      </p>
+      <p>Pytanie do agenta (Albert Einstein, model <code>grok-3</code>). Agent ma tool-call <code>getNotesForRange</code> i czyta Twoje wpisy z dowolnego zakresu dat. Wpisy z dnia <code>date</code> są w kontekście automatycznie.</p>
 
       <h3>Body (single-shot)</h3>
       <table class="params">
         <thead><tr><th>Field</th><th>Type</th><th>Opis</th></tr></thead>
         <tbody>
-          <tr>
-            <td class="name">question<span class="req">required</span></td>
-            <td class="type">string</td>
-            <td>Pojedyncze pytanie do agenta.</td>
-          </tr>
-          <tr>
-            <td class="name">date<span class="opt">optional</span></td>
-            <td class="type">string (YYYY-MM-DD)</td>
-            <td>"Aktywny" dzień — wpisy z tego dnia trafiają do kontekstu systemowego. Domyślnie dziś.</td>
-          </tr>
+          <tr><td class="name">question<span class="req">required</span></td><td class="type">string</td><td>Pojedyncze pytanie.</td></tr>
+          <tr><td class="name">date<span class="opt">optional</span></td><td class="type">string (YYYY-MM-DD)</td><td>„Aktywny" dzień — wpisy trafiają do kontekstu. Domyślnie dziś.</td></tr>
         </tbody>
       </table>
 
-      <div class="callout">
-        Endpoint akceptuje też pełny format <code>{ messages, context }</code> używany przez UI z historią konwersacji.
-      </div>
+      <div class="callout">Endpoint akceptuje też <code>{ messages, context }</code> używany przez UI z historią konwersacji.</div>
 
       <h3>Request</h3>
       <div class="code">
         <div class="code-head">
           <span class="label">curl</span>
-          <button class="copy-btn" data-copy='curl -X POST $URL/notes-chat -H "Authorization: Bearer dzn_xxx" -H "Content-Type: application/json" -d "{\"question\":\"co robilem w zeszly piatek?\",\"date\":\"2026-06-19\"}"'>Copy</button>
+          <button class="copy-btn" data-copy='curl -X POST $URL/notes-chat -H "Authorization: Bearer dzn_xxx" -H "Content-Type: application/json" -d "{\"question\":\"co robilem w piatek?\",\"date\":\"2026-06-19\"}"'>Copy</button>
         </div>
 <pre><span class="k">curl</span> -X POST $URL/notes-chat \
   -H <span class="s">"Authorization: Bearer dzn_xxx"</span> \
@@ -603,29 +600,24 @@
 }</pre>
       </div>
 
-      <p><code>proposals</code> to lista propozycji nowych wpisów wygenerowanych przez agenta tool-callem <code>proposeNote</code>. Agent <em>nie zapisuje</em> wpisów sam — jeśli chcesz je przyjąć, użyj <a href="#create">Create</a>.</p>
+      <p><code>proposals</code> to lista propozycji nowych wpisów (tool-call <code>proposeNote</code>). Agent <em>nie zapisuje</em> sam — chcesz przyjąć, użyj <a href="#create">Create</a>.</p>
     </section>
 
     <hr />
 
-    <!-- ===================== READ ===================== -->
     <section id="read">
       <h2>Read — odczytaj dzień</h2>
       <div class="endpoint">
         <span class="method get">GET</span>
         <span class="path">/get-entry?date=YYYY-MM-DD</span>
       </div>
-      <p>Zwraca wszystkie wpisy z danego dnia (posortowane po <code>position</code> rosnąco) oraz mood, jeśli ustawiony.</p>
+      <p>Zwraca wszystkie wpisy z danego dnia (posortowane po <code>position</code> rosnąco) oraz mood.</p>
 
       <h3>Query</h3>
       <table class="params">
         <thead><tr><th>Param</th><th>Type</th><th>Opis</th></tr></thead>
         <tbody>
-          <tr>
-            <td class="name">date<span class="opt">optional</span></td>
-            <td class="type">string (YYYY-MM-DD)</td>
-            <td>Data do odczytania. Domyślnie dzisiaj w strefie <code>Europe/Warsaw</code>.</td>
-          </tr>
+          <tr><td class="name">date<span class="opt">optional</span></td><td class="type">string (YYYY-MM-DD)</td><td>Domyślnie dzisiaj.</td></tr>
         </tbody>
       </table>
 
@@ -649,24 +641,21 @@
     {
       <span class="k">"id"</span>: <span class="s">"3c131afc-..."</span>,
       <span class="k">"position"</span>: <span class="n">1</span>,
-      <span class="k">"content"</span>: <span class="s">"Nastrój 5/5 — duma, zbudowałem skilla."</span>,
-      <span class="k">"created_at"</span>: <span class="s">"2026-06-23T07:18:57.552Z"</span>,
-      <span class="k">"updated_at"</span>: <span class="s">"2026-06-23T07:18:57.552Z"</span>
+      <span class="k">"content"</span>: <span class="s">"Nastrój 5/5 — duma."</span>,
+      <span class="k">"created_at"</span>: <span class="s">"2026-06-23T07:18:57Z"</span>,
+      <span class="k">"updated_at"</span>: <span class="s">"2026-06-23T07:18:57Z"</span>
     }
   ],
   <span class="k">"mood"</span>: <span class="n">5</span>
 }</pre>
       </div>
-
-      <p><code>mood</code> jest <code>null</code>, jeśli dla danego dnia nie ustawiono nastroju.</p>
     </section>
 
     <hr />
 
-    <!-- ===================== REFERENCE ===================== -->
     <section id="schema">
       <h2>Model danych</h2>
-      <p>Dane żyją w Postgresie (Supabase). Każdy endpoint operuje wyłącznie na danych zalogowanego użytkownika — RLS lub jawny filtr po <code>user_id</code>.</p>
+      <p>Postgres (Supabase). RLS lub jawny filtr po <code>user_id</code> w każdym zapytaniu.</p>
 
       <h3>public.notes</h3>
       <table class="params">
@@ -674,9 +663,9 @@
         <tbody>
           <tr><td class="name">id</td><td class="type">uuid</td><td>PK</td></tr>
           <tr><td class="name">user_id</td><td class="type">uuid</td><td>FK do <code>auth.users</code></td></tr>
-          <tr><td class="name">date</td><td class="type">date</td><td>Data wpisu, YYYY-MM-DD</td></tr>
-          <tr><td class="name">position</td><td class="type">smallint</td><td>Pozycja 1–5 w obrębie dnia</td></tr>
-          <tr><td class="name">content</td><td class="type">text</td><td>Treść, ≤ 500 znaków</td></tr>
+          <tr><td class="name">date</td><td class="type">date</td><td>YYYY-MM-DD</td></tr>
+          <tr><td class="name">position</td><td class="type">smallint</td><td>1–5 w obrębie dnia</td></tr>
+          <tr><td class="name">content</td><td class="type">text</td><td>≤ 500 znaków</td></tr>
           <tr><td class="name">created_at, updated_at</td><td class="type">timestamptz</td><td>Audyt</td></tr>
         </tbody>
       </table>
@@ -693,68 +682,471 @@
 
     <section id="tokens">
       <h2>Tokeny API</h2>
-      <p>Tokeny są przechowywane jako <code>sha256(token)</code> w hex w kolumnie <code>token_hash</code>. Surowy token widoczny jest tylko w momencie generacji.</p>
+      <p>Tokeny przechowywane jako <code>sha256(token)</code> w hex w kolumnie <code>token_hash</code>. Surowy token widoczny tylko w momencie generacji.</p>
 
-      <h3>Generacja tokenu (na razie ręcznie)</h3>
-      <div class="code">
-        <div class="code-head"><span class="label">powershell</span></div>
-<pre><span class="c"># 1. Wygeneruj losowy token i jego sha256</span>
-$bytes = New-Object byte[] 32
-[System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
-$b64 = [Convert]::ToBase64String($bytes).Replace(<span class="s">'+'</span>,<span class="s">'-'</span>).Replace(<span class="s">'/'</span>,<span class="s">'_'</span>).TrimEnd(<span class="s">'='</span>)
-$token = <span class="s">"dzn_$b64"</span>
-$sha = [System.Security.Cryptography.SHA256]::Create()
-$hash = ($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($token)) | % { $_.ToString(<span class="s">'x2'</span>) }) -join <span class="s">''</span>
-<span class="s">"TOKEN=$token"</span>; <span class="s">"HASH=$hash"</span></pre>
-      </div>
+      <h3>Generacja</h3>
+      <p>Kliknij <strong>„Generuj token API"</strong> w górnym pasku. Musisz być zalogowany w aplikacji.</p>
 
-      <div class="code">
-        <div class="code-head"><span class="label">sql</span></div>
-<pre><span class="c">-- 2. Wstaw rekord (Supabase Studio &gt; SQL Editor)</span>
-<span class="k">insert into</span> public.api_tokens (user_id, token_hash, name)
-<span class="k">values</span> (<span class="s">'&lt;twoje user_id&gt;'</span>, <span class="s">'&lt;HASH z kroku 1&gt;'</span>, <span class="s">'cli'</span>);</pre>
-      </div>
-
-      <p>Cofnięcie tokenu: <code>update api_tokens set revoked_at = now() where name = 'cli';</code></p>
+      <h3>Cofnięcie tokenu</h3>
+      <p>Aktualnie: <code>update api_tokens set revoked_at = now() where id = '&lt;token_id&gt;';</code> w Supabase Studio. UI do listy/cofania planowane w v1.1.</p>
     </section>
-
   </main>
 </div>
 
-<script>
-  // Active nav highlighting
-  const navLinks = document.querySelectorAll('aside.sidebar a[href^="#"]');
-  const sections = Array.from(navLinks)
-    .map(a => document.getElementById(a.getAttribute('href').slice(1)))
-    .filter(Boolean);
+<!-- ========================= MCP TAB ========================= -->
+<div class="tab-pane" id="tab-mcp">
+  <aside class="sidebar">
+    <div class="group">
+      <div class="group-title">Wprowadzenie</div>
+      <ul>
+        <li><a href="#mcp-overview">Po co MCP</a></li>
+        <li><a href="#mcp-endpoint">Endpoint &amp; auth</a></li>
+      </ul>
+    </div>
 
-  function updateActive() {
-    const scrollPos = window.scrollY + 120;
-    let current = sections[0];
-    for (const s of sections) {
-      if (s.offsetTop <= scrollPos) current = s;
+    <div class="group">
+      <div class="group-title">Klienci</div>
+      <ul>
+        <li><a href="#mcp-claude-code">Claude Code</a></li>
+        <li><a href="#mcp-claude-desktop">Claude Desktop</a></li>
+        <li><a href="#mcp-cursor">Cursor</a></li>
+      </ul>
+    </div>
+
+    <div class="group">
+      <div class="group-title">Tools</div>
+      <ul>
+        <li><a href="#tool-add-entry"><span class="nav-method tool">TOOL</span>add_entry</a></li>
+        <li><a href="#tool-get-entry"><span class="nav-method tool">TOOL</span>get_entry</a></li>
+        <li><a href="#tool-ask"><span class="nav-method tool">TOOL</span>ask</a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <main>
+    <section id="mcp-overview">
+      <h1>Dziennik MCP</h1>
+      <p class="lede">
+        Serwer <strong>Model Context Protocol</strong> hostowany na Vercelu. Pozwala dowolnemu klientowi MCP
+        (Claude Desktop, Claude Code, Cursor, Continue) korzystać z Twojego dziennika jako narzędzia.
+      </p>
+
+      <h3>Endpoint</h3>
+      <div class="code">
+        <div class="code-head">
+          <span class="label">url</span>
+          <button class="copy-btn" id="copy-mcp-url" data-copy="">Copy</button>
+        </div>
+<pre id="mcp-url-display"><span class="s">https://&lt;twoj-vercel-app&gt;/api/mcp</span></pre>
+      </div>
+
+      <div class="callout">
+        Endpoint jest stateless (HTTP JSON-RPC). Autoryzacja przez nagłówek <code>Authorization: Bearer dzn_&lt;token&gt;</code>.
+        Token wygenerujesz przyciskiem w górnym pasku.
+      </div>
+    </section>
+
+    <hr />
+
+    <section id="mcp-endpoint">
+      <h2>Endpoint &amp; auth</h2>
+      <p>Wszystkie wywołania trafiają na <code>POST /api/mcp</code> z body JSON-RPC 2.0. Serwer rozumie:</p>
+      <ul class="bullets">
+        <li><code>initialize</code> — handshake protokołu</li>
+        <li><code>tools/list</code> — lista dostępnych narzędzi</li>
+        <li><code>tools/call</code> — wywołanie narzędzia z argumentami</li>
+        <li><code>ping</code> — health check</li>
+      </ul>
+
+      <h3>Surowy test (curl)</h3>
+      <div class="code">
+        <div class="code-head">
+          <span class="label">curl</span>
+          <button class="copy-btn" data-copy='curl -X POST https://YOUR.vercel.app/api/mcp -H "Authorization: Bearer dzn_xxx" -H "Content-Type: application/json" -d "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}"'>Copy</button>
+        </div>
+<pre><span class="k">curl</span> -X POST https://YOUR.vercel.app/api/mcp \
+  -H <span class="s">"Authorization: Bearer dzn_xxx"</span> \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{"jsonrpc":"2.0","id":1,"method":"tools/list"}'</span></pre>
+      </div>
+    </section>
+
+    <hr />
+
+    <section id="mcp-claude-code">
+      <h2>Claude Code</h2>
+      <p>W terminalu, w katalogu projektu:</p>
+      <div class="code">
+        <div class="code-head">
+          <span class="label">shell</span>
+          <button class="copy-btn" id="copy-cc-cmd" data-copy="">Copy</button>
+        </div>
+<pre id="cc-cmd-display"><span class="k">claude</span> mcp add --scope user --transport http dziennik \
+  https://&lt;twoj-vercel-app&gt;/api/mcp \
+  --header <span class="s">"Authorization: Bearer dzn_&lt;twoj_token&gt;"</span></pre>
+      </div>
+
+      <p>Restart sesji. Sprawdź <code>/mcp</code> — <code>dziennik</code> powinno mieć status <code>connected</code>.</p>
+    </section>
+
+    <hr />
+
+    <section id="mcp-claude-desktop">
+      <h2>Claude Desktop</h2>
+      <p>Edytuj <code>claude_desktop_config.json</code>:</p>
+      <ul class="bullets">
+        <li><strong>macOS:</strong> <code>~/Library/Application Support/Claude/claude_desktop_config.json</code></li>
+        <li><strong>Windows:</strong> <code>%APPDATA%\Claude\claude_desktop_config.json</code></li>
+      </ul>
+      <div class="code">
+        <div class="code-head">
+          <span class="label">json</span>
+          <button class="copy-btn" id="copy-cd-cfg" data-copy="">Copy</button>
+        </div>
+<pre id="cd-cfg-display">{
+  <span class="k">"mcpServers"</span>: {
+    <span class="k">"dziennik"</span>: {
+      <span class="k">"type"</span>: <span class="s">"http"</span>,
+      <span class="k">"url"</span>: <span class="s">"https://&lt;twoj-vercel-app&gt;/api/mcp"</span>,
+      <span class="k">"headers"</span>: {
+        <span class="k">"Authorization"</span>: <span class="s">"Bearer dzn_&lt;twoj_token&gt;"</span>
+      }
     }
-    navLinks.forEach(a => {
-      a.classList.toggle('active', a.getAttribute('href') === '#' + current.id);
-    });
   }
-  window.addEventListener('scroll', updateActive, { passive: true });
-  updateActive();
+}</pre>
+      </div>
+      <p>Po edycji zamknij i otwórz Claude Desktop od nowa.</p>
+    </section>
 
-  // Copy buttons
-  document.querySelectorAll('.copy-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const text = btn.getAttribute('data-copy') || '';
+    <hr />
+
+    <section id="mcp-cursor">
+      <h2>Cursor</h2>
+      <p>Settings → Cursor Settings → MCP → Add new MCP server:</p>
+      <div class="code">
+        <div class="code-head">
+          <span class="label">json</span>
+        </div>
+<pre>{
+  <span class="k">"mcpServers"</span>: {
+    <span class="k">"dziennik"</span>: {
+      <span class="k">"url"</span>: <span class="s">"https://&lt;twoj-vercel-app&gt;/api/mcp"</span>,
+      <span class="k">"headers"</span>: {
+        <span class="k">"Authorization"</span>: <span class="s">"Bearer dzn_&lt;twoj_token&gt;"</span>
+      }
+    }
+  }
+}</pre>
+      </div>
+    </section>
+
+    <hr />
+
+    <section id="tool-add-entry">
+      <h2>add_entry</h2>
+      <div class="endpoint">
+        <span class="method tool">TOOL</span>
+        <span class="path">add_entry(content, date?, mood?)</span>
+      </div>
+      <p>Dodaje wpis do dziennika. Mapuje na <code>POST /add-entry</code>.</p>
+
+      <table class="params">
+        <thead><tr><th>Field</th><th>Type</th><th>Opis</th></tr></thead>
+        <tbody>
+          <tr><td class="name">content<span class="req">required</span></td><td class="type">string</td><td>1–500 znaków.</td></tr>
+          <tr><td class="name">date<span class="opt">optional</span></td><td class="type">string YYYY-MM-DD</td><td>Domyślnie dzisiaj.</td></tr>
+          <tr><td class="name">mood<span class="opt">optional</span></td><td class="type">integer 1–5</td><td>Nastrój dnia.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">Agent może użyć <code>add_entry</code> z własnej inicjatywy — limit 5/dzień obowiązuje tak samo jak w UI.</div>
+    </section>
+
+    <hr />
+
+    <section id="tool-get-entry">
+      <h2>get_entry</h2>
+      <div class="endpoint">
+        <span class="method tool">TOOL</span>
+        <span class="path">get_entry(date?)</span>
+      </div>
+      <p>Zwraca wpisy z dnia (max 5) + nastrój. Mapuje na <code>GET /get-entry</code>.</p>
+
+      <table class="params">
+        <thead><tr><th>Field</th><th>Type</th><th>Opis</th></tr></thead>
+        <tbody>
+          <tr><td class="name">date<span class="opt">optional</span></td><td class="type">string YYYY-MM-DD</td><td>Domyślnie dzisiaj.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <hr />
+
+    <section id="tool-ask">
+      <h2>ask</h2>
+      <div class="endpoint">
+        <span class="method tool">TOOL</span>
+        <span class="path">ask(question, date?)</span>
+      </div>
+      <p>Pyta asystenta o wpisy. Mapuje na <code>POST /notes-chat</code>. Asystent ma własne tool-calle (czytanie zakresów, propozycje wpisów).</p>
+
+      <table class="params">
+        <thead><tr><th>Field</th><th>Type</th><th>Opis</th></tr></thead>
+        <tbody>
+          <tr><td class="name">question<span class="req">required</span></td><td class="type">string</td><td>Pytanie po polsku.</td></tr>
+          <tr><td class="name">date<span class="opt">optional</span></td><td class="type">string YYYY-MM-DD</td><td>Aktywny dzień (kontekst).</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">Zwrot zawiera <code>reply</code> (tekst) i opcjonalne <code>proposals</code>. Tool nie tworzy wpisów sam — daj agentowi <code>add_entry</code>, jeśli chcesz, żeby zapisywał.</div>
+    </section>
+  </main>
+</div>
+
+<!-- ========================= MODAL ========================= -->
+<div class="modal-backdrop" id="modal" hidden>
+  <div class="modal" id="modal-content"></div>
+</div>
+
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const SUPABASE_URL = "https://kkegymepatwufnemtldr.supabase.co";
+const SUPABASE_KEY = "sb_publishable_k7vmUw1RIpEvpJEmDJowvA_p2R3gy0L";
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const APP_URL = "../"; // ścieżka do głównej apki
+
+/* ===== Tabs ===== */
+const tabs = document.querySelectorAll(".tabs button");
+const panes = document.querySelectorAll(".tab-pane");
+function setTab(name) {
+  tabs.forEach(b => b.classList.toggle("active", b.dataset.tab === name));
+  panes.forEach(p => p.classList.toggle("active", p.id === `tab-${name}`));
+  // odśwież podświetlenie nav sidebaru
+  window.scrollTo(0, 0);
+  updateActiveNav();
+  // hash dla deep-linkowania
+  history.replaceState(null, "", `#${name}`);
+}
+tabs.forEach(b => b.addEventListener("click", () => setTab(b.dataset.tab)));
+const initialTab = location.hash === "#mcp" ? "mcp" : "api";
+setTab(initialTab);
+
+/* ===== Active nav highlight (per-tab) ===== */
+function updateActiveNav() {
+  const activePane = document.querySelector(".tab-pane.active");
+  if (!activePane) return;
+  const links = activePane.querySelectorAll('aside.sidebar a[href^="#"]');
+  const sects = Array.from(links)
+    .map(a => document.getElementById(a.getAttribute("href").slice(1)))
+    .filter(Boolean);
+  const pos = window.scrollY + 120;
+  let current = sects[0];
+  for (const s of sects) if (s.offsetTop <= pos) current = s;
+  links.forEach(a => {
+    a.classList.toggle("active", current && a.getAttribute("href") === "#" + current.id);
+  });
+}
+window.addEventListener("scroll", updateActiveNav, { passive: true });
+
+/* ===== Copy buttons (delegowane, bo treść MCP url updateuje się dynamicznie) ===== */
+document.addEventListener("click", async (e) => {
+  const btn = e.target.closest(".copy-btn");
+  if (!btn) return;
+  const text = btn.getAttribute("data-copy") || "";
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    const orig = btn.textContent;
+    btn.textContent = "Copied";
+    setTimeout(() => { btn.textContent = orig; }, 1200);
+  } catch {
+    btn.textContent = "Press Ctrl+C";
+  }
+});
+
+/* ===== Dynamiczny MCP URL: zgadnij z origin (Vercel) ===== */
+const mcpUrl = `${location.origin}/api/mcp`;
+function fillMcpSnippets() {
+  // tylko jeśli host wygląda na vercel/custom (nie GitHub Pages, gdzie /api/mcp nie istnieje)
+  const isGhPages = location.hostname.endsWith("github.io");
+  const url = isGhPages ? "https://<twoj-vercel-app>/api/mcp" : mcpUrl;
+
+  const elDisplay = document.getElementById("mcp-url-display");
+  if (elDisplay) elDisplay.innerHTML = `<span class="s">${url}</span>`;
+  const elCopy = document.getElementById("copy-mcp-url");
+  if (elCopy) elCopy.setAttribute("data-copy", url);
+
+  // Claude Code command
+  const ccCmd = document.getElementById("cc-cmd-display");
+  if (ccCmd) {
+    ccCmd.innerHTML = `<span class="k">claude</span> mcp add --scope user --transport http dziennik \\
+  ${url} \\
+  --header <span class="s">"Authorization: Bearer dzn_&lt;twoj_token&gt;"</span>`;
+  }
+  const ccCopy = document.getElementById("copy-cc-cmd");
+  if (ccCopy) ccCopy.setAttribute("data-copy",
+    `claude mcp add --scope user --transport http dziennik ${url} --header "Authorization: Bearer dzn_<twoj_token>"`);
+
+  // Claude Desktop config
+  const cdCfg = document.getElementById("cd-cfg-display");
+  const cdJson = `{
+  "mcpServers": {
+    "dziennik": {
+      "type": "http",
+      "url": "${url}",
+      "headers": {
+        "Authorization": "Bearer dzn_<twoj_token>"
+      }
+    }
+  }
+}`;
+  if (cdCfg) {
+    cdCfg.innerHTML = cdJson
+      .replace(/"([^"]+)":/g, '<span class="k">"$1"</span>:')
+      .replace(/: "([^"]+)"/g, ': <span class="s">"$1"</span>');
+  }
+  const cdCopy = document.getElementById("copy-cd-cfg");
+  if (cdCopy) cdCopy.setAttribute("data-copy", cdJson);
+}
+fillMcpSnippets();
+
+/* ===== Auth + token generator ===== */
+const tokenBtn = document.getElementById("token-btn");
+const logoutBtn = document.getElementById("logout-btn");
+const userEmailEl = document.getElementById("user-email");
+const modal = document.getElementById("modal");
+const modalContent = document.getElementById("modal-content");
+
+function openModal(html) {
+  modalContent.innerHTML = html;
+  modal.hidden = false;
+}
+function closeModal() {
+  modal.hidden = true;
+  modalContent.innerHTML = "";
+}
+modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
+
+async function refreshUser() {
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
+  if (user) {
+    userEmailEl.textContent = user.email;
+    userEmailEl.hidden = false;
+    logoutBtn.hidden = false;
+    tokenBtn.textContent = "Generuj token API";
+  } else {
+    userEmailEl.hidden = true;
+    logoutBtn.hidden = true;
+    tokenBtn.textContent = "Zaloguj się, żeby wygenerować token";
+  }
+}
+refreshUser();
+supabase.auth.onAuthStateChange(() => refreshUser());
+
+logoutBtn.addEventListener("click", async () => {
+  await supabase.auth.signOut();
+  refreshUser();
+});
+
+tokenBtn.addEventListener("click", async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    openModal(`
+      <h3>Wymagane logowanie</h3>
+      <p>Żeby wygenerować token API, zaloguj się w aplikacji. Wrócisz tu po zalogowaniu.</p>
+      <div class="login-hint">
+        <a href="${APP_URL}">Przejdź do logowania →</a>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" id="modal-close">Anuluj</button>
+      </div>
+    `);
+    document.getElementById("modal-close").addEventListener("click", closeModal);
+    return;
+  }
+
+  openModal(`
+    <h3>Wygeneruj nowy token API</h3>
+    <p>Token będzie miał format <code>dzn_…</code>. Plaintext zobaczysz <strong>tylko raz</strong> — zapisz go.</p>
+    <label for="token-name">Nazwa (do identyfikacji)</label>
+    <input type="text" id="token-name" placeholder="np. claude-desktop-laptop" maxlength="60" />
+    <div class="modal-actions">
+      <button class="btn" id="modal-cancel">Anuluj</button>
+      <button class="btn primary" id="modal-gen">Wygeneruj</button>
+    </div>
+  `);
+  document.getElementById("modal-cancel").addEventListener("click", closeModal);
+  document.getElementById("token-name").focus();
+  document.getElementById("modal-gen").addEventListener("click", () => generateToken());
+});
+
+async function generateToken() {
+  const nameInput = document.getElementById("token-name");
+  const name = nameInput?.value?.trim() || "Token bez nazwy";
+  const genBtn = document.getElementById("modal-gen");
+  if (genBtn) { genBtn.disabled = true; genBtn.textContent = "Generuję…"; }
+
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) { closeModal(); refreshUser(); return; }
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/create-api-token`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+
+    openModal(`
+      <h3>Token wygenerowany</h3>
+      <p class="warn">⚠ Zapisz token TERAZ. Nigdy więcej go nie zobaczysz.</p>
+      <p>Nazwa: <code>${escapeHtml(data.name)}</code></p>
+      <div class="token-display">
+        <span class="token-text" id="token-text">${escapeHtml(data.token)}</span>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" id="modal-copy">Kopiuj</button>
+        <button class="btn primary" id="modal-done">Zapisałem</button>
+      </div>
+    `);
+    document.getElementById("modal-done").addEventListener("click", closeModal);
+    document.getElementById("modal-copy").addEventListener("click", async () => {
       try {
-        await navigator.clipboard.writeText(text);
-        const orig = btn.textContent;
-        btn.textContent = 'Copied';
-        setTimeout(() => { btn.textContent = orig; }, 1200);
+        await navigator.clipboard.writeText(data.token);
+        const b = document.getElementById("modal-copy");
+        b.textContent = "Skopiowano ✓";
+        setTimeout(() => { b.textContent = "Kopiuj"; }, 1500);
       } catch {
-        btn.textContent = 'Press Ctrl+C';
+        alert("Nie udało się skopiować — zaznacz i Ctrl+C.");
       }
     });
-  });
+  } catch (err) {
+    openModal(`
+      <h3>Błąd generowania tokenu</h3>
+      <p style="color:#c97b8a">${escapeHtml(err.message)}</p>
+      <div class="modal-actions">
+        <button class="btn primary" id="modal-close">OK</button>
+      </div>
+    `);
+    document.getElementById("modal-close").addEventListener("click", closeModal);
+  }
+}
+
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+
+// Trigger initial nav highlight
+updateActiveNav();
 </script>
 
 </body>
