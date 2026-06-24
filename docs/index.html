@@ -1143,25 +1143,47 @@ logoutBtn.addEventListener("click", async () => {
 
 /* ===== Funkcje wystawione na window dla onclick="" w HTML ===== */
 
+function __setStatus(msg, color) {
+  const s = document.getElementById("js-status");
+  if (s) { s.textContent = msg; if (color) s.style.color = color; }
+}
+
 window.__toggleTokenPanel = async function () {
-  // toggle: jak panel widoczny -> ukryj; jak nie -> pokaz odpowiedni stan
+  __setStatus("JS: toggle start", "#444");
+  if (!panel) { __setStatus("JS: brak #token-panel w DOM", "#c00"); return; }
+
+  // Toggle: jezeli juz widoczny -> ukryj
   if (panel.style.display !== "none" && panel.style.display !== "") {
     panel.style.display = "none";
+    __setStatus("JS: panel ukryty", "#166534");
     return;
   }
+
+  // Pokaz panel od razu w stanie loading (zanim cokolwiek async)
+  showPane("loading");
+  __setStatus("JS: panel pokazany (loading)", "#166534");
+
+  // Async: sprawdz sesje z 5s timeoutem
+  let session = null;
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      showPane("anon");
-    } else {
-      document.getElementById("token-name-input").value = "";
-      showPane("form");
-      setTimeout(() => document.getElementById("token-name-input").focus(), 0);
-    }
+    const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error("getSession timeout 5s")), 5000));
+    const result = await Promise.race([supabase.auth.getSession(), timeout]);
+    session = result?.data?.session ?? null;
+    __setStatus("JS: sesja " + (session ? "OK (" + session.user.email + ")" : "brak"), "#166534");
   } catch (e) {
+    __setStatus("JS: blad getSession: " + (e?.message || e), "#c00");
     document.getElementById("token-error-msg").textContent =
-      "Nie udało się sprawdzić sesji: " + (e?.message || e);
+      "Nie udalo sie sprawdzic sesji: " + (e?.message || e) + "\n\nMozliwe ze blokada CDN Supabase. Sprobuj wylaczyc adblocker.";
     showPane("error");
+    return;
+  }
+
+  if (!session) {
+    showPane("anon");
+  } else {
+    document.getElementById("token-name-input").value = "";
+    showPane("form");
+    setTimeout(() => document.getElementById("token-name-input").focus(), 0);
   }
 };
 
