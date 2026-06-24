@@ -323,6 +323,7 @@
     z-index: 100;
     padding: 20px;
   }
+  .modal-backdrop[hidden] { display: none !important; }
   .modal {
     background: var(--bg);
     color: var(--ink);
@@ -1052,35 +1053,47 @@ logoutBtn.addEventListener("click", async () => {
 });
 
 tokenBtn.addEventListener("click", async () => {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
+  try {
+    const { data: { session }, error: sessErr } = await supabase.auth.getSession();
+    if (sessErr) throw new Error(`Auth: ${sessErr.message}`);
+
+    if (!session) {
+      openModal(`
+        <div style="color:#0a0a0a;background:#ffffff;font-family:inherit;">
+          <h3 style="margin:0 0 8px;color:#0a0a0a;font-size:18px;">Wymagane logowanie</h3>
+          <p style="color:#444;margin:0 0 16px;font-size:14px;">Żeby wygenerować token API, zaloguj się w aplikacji. Po zalogowaniu wróć tu i kliknij ponownie.</p>
+          <div style="text-align:center;padding:8px 0 16px;">
+            <a href="${APP_URL}" style="display:inline-block;padding:10px 18px;background:#0a0a0a;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">Przejdź do logowania →</a>
+          </div>
+          <div style="display:flex;justify-content:flex-end;">
+            <button id="modal-close" style="padding:8px 14px;border:1px solid #d4d4d4;background:#fafafa;color:#0a0a0a;border-radius:8px;cursor:pointer;font:inherit;">Zamknij</button>
+          </div>
+        </div>
+      `);
+      document.getElementById("modal-close").addEventListener("click", closeModal);
+      return;
+    }
+
     openModal(`
-      <h3>Wymagane logowanie</h3>
-      <p>Żeby wygenerować token API, zaloguj się w aplikacji. Wrócisz tu po zalogowaniu.</p>
-      <div class="login-hint">
-        <a href="${APP_URL}">Przejdź do logowania →</a>
-      </div>
-      <div class="modal-actions">
-        <button class="btn" id="modal-close">Anuluj</button>
+      <div style="color:#0a0a0a;background:#ffffff;font-family:inherit;">
+        <h3 style="margin:0 0 8px;color:#0a0a0a;font-size:18px;">Wygeneruj nowy token API</h3>
+        <p style="color:#444;margin:0 0 16px;font-size:14px;">Token będzie miał format <code>dzn_…</code>. Plaintext zobaczysz <strong>tylko raz</strong> — zapisz go w bezpiecznym miejscu.</p>
+        <label for="token-name" style="display:block;font-size:12px;color:#666;margin-bottom:4px;">Nazwa (do identyfikacji, np. „claude-desktop")</label>
+        <input type="text" id="token-name" placeholder="np. claude-desktop-laptop" maxlength="60"
+          style="width:100%;padding:10px 12px;border:1px solid #d4d4d4;border-radius:8px;font:inherit;font-size:14px;color:#0a0a0a;background:#ffffff;margin-bottom:16px;box-sizing:border-box;" />
+        <div style="display:flex;justify-content:flex-end;gap:8px;">
+          <button id="modal-cancel" style="padding:8px 14px;border:1px solid #d4d4d4;background:#fafafa;color:#0a0a0a;border-radius:8px;cursor:pointer;font:inherit;">Anuluj</button>
+          <button id="modal-gen" style="padding:8px 14px;border:1px solid #0a0a0a;background:#0a0a0a;color:#fff;border-radius:8px;cursor:pointer;font:inherit;font-weight:600;">Wygeneruj</button>
+        </div>
       </div>
     `);
-    document.getElementById("modal-close").addEventListener("click", closeModal);
-    return;
+    document.getElementById("modal-cancel").addEventListener("click", closeModal);
+    document.getElementById("token-name").focus();
+    document.getElementById("modal-gen").addEventListener("click", () => generateToken());
+  } catch (err) {
+    alert("Błąd otwierania generatora: " + (err?.message || err));
+    console.error("token-btn click:", err);
   }
-
-  openModal(`
-    <h3>Wygeneruj nowy token API</h3>
-    <p>Token będzie miał format <code>dzn_…</code>. Plaintext zobaczysz <strong>tylko raz</strong> — zapisz go.</p>
-    <label for="token-name">Nazwa (do identyfikacji)</label>
-    <input type="text" id="token-name" placeholder="np. claude-desktop-laptop" maxlength="60" />
-    <div class="modal-actions">
-      <button class="btn" id="modal-cancel">Anuluj</button>
-      <button class="btn primary" id="modal-gen">Wygeneruj</button>
-    </div>
-  `);
-  document.getElementById("modal-cancel").addEventListener("click", closeModal);
-  document.getElementById("token-name").focus();
-  document.getElementById("modal-gen").addEventListener("click", () => generateToken());
 });
 
 async function generateToken() {
@@ -1105,15 +1118,17 @@ async function generateToken() {
     if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
 
     openModal(`
-      <h3>Token wygenerowany</h3>
-      <p class="warn">⚠ Zapisz token TERAZ. Nigdy więcej go nie zobaczysz.</p>
-      <p>Nazwa: <code>${escapeHtml(data.name)}</code></p>
-      <div class="token-display">
-        <span class="token-text" id="token-text">${escapeHtml(data.token)}</span>
-      </div>
-      <div class="modal-actions">
-        <button class="btn" id="modal-copy">Kopiuj</button>
-        <button class="btn primary" id="modal-done">Zapisałem</button>
+      <div style="color:#0a0a0a;background:#ffffff;font-family:inherit;">
+        <h3 style="margin:0 0 8px;color:#0a0a0a;font-size:18px;">Token wygenerowany</h3>
+        <p style="color:#c97b8a;font-weight:600;margin:0 0 12px;font-size:14px;">⚠ Zapisz token TERAZ. Nigdy więcej go nie zobaczysz.</p>
+        <p style="color:#444;margin:0 0 8px;font-size:14px;">Nazwa: <code style="background:#fafafa;padding:1px 6px;border:1px solid #ebebeb;border-radius:4px;">${escapeHtml(data.name)}</code></p>
+        <div style="background:#0a0a0a;border-radius:8px;padding:12px;margin:12px 0;font-family:ui-monospace,Menlo,monospace;font-size:12px;color:#a5d6a7;word-break:break-all;">
+          <span id="token-text">${escapeHtml(data.token)}</span>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;">
+          <button id="modal-copy" style="padding:8px 14px;border:1px solid #d4d4d4;background:#fafafa;color:#0a0a0a;border-radius:8px;cursor:pointer;font:inherit;">Kopiuj</button>
+          <button id="modal-done" style="padding:8px 14px;border:1px solid #0a0a0a;background:#0a0a0a;color:#fff;border-radius:8px;cursor:pointer;font:inherit;font-weight:600;">Zapisałem</button>
+        </div>
       </div>
     `);
     document.getElementById("modal-done").addEventListener("click", closeModal);
@@ -1124,15 +1139,17 @@ async function generateToken() {
         b.textContent = "Skopiowano ✓";
         setTimeout(() => { b.textContent = "Kopiuj"; }, 1500);
       } catch {
-        alert("Nie udało się skopiować — zaznacz i Ctrl+C.");
+        alert("Nie udało się skopiować — zaznacz token i Ctrl+C.");
       }
     });
   } catch (err) {
     openModal(`
-      <h3>Błąd generowania tokenu</h3>
-      <p style="color:#c97b8a">${escapeHtml(err.message)}</p>
-      <div class="modal-actions">
-        <button class="btn primary" id="modal-close">OK</button>
+      <div style="color:#0a0a0a;background:#ffffff;font-family:inherit;">
+        <h3 style="margin:0 0 8px;color:#0a0a0a;font-size:18px;">Błąd generowania tokenu</h3>
+        <p style="color:#c97b8a;margin:0 0 16px;font-size:14px;">${escapeHtml(err.message)}</p>
+        <div style="display:flex;justify-content:flex-end;">
+          <button id="modal-close" style="padding:8px 14px;border:1px solid #0a0a0a;background:#0a0a0a;color:#fff;border-radius:8px;cursor:pointer;font:inherit;font-weight:600;">OK</button>
+        </div>
       </div>
     `);
     document.getElementById("modal-close").addEventListener("click", closeModal);
