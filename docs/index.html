@@ -385,7 +385,7 @@
 
   <div class="top-actions">
     <span class="user-email" id="user-email" hidden></span>
-    <button class="btn primary" id="token-btn" onclick="(window.__toggleTokenPanel||function(){alert('Skrypt generatora nie zaladowal sie. Najczestsza przyczyna: VPN/adblocker blokuje esm.sh. Wylacz VPN lub rozszerzenia, odswiez strone (Ctrl+Shift+R) i sprobuj ponownie.')})()">Generuj token API · v4</button>
+    <button class="btn primary" id="token-btn">Generuj token API · v5</button>
     <button class="btn-link" id="logout-btn" hidden>wyloguj</button>
   </div>
 </header>
@@ -955,6 +955,33 @@
   </main>
 </div>
 
+
+<!-- Non-module bootstrap: gwarantuje obsluge kliku nawet jak module script padl -->
+<script>
+(function () {
+  function onReady(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  onReady(function () {
+    var btn = document.getElementById("token-btn");
+    if (!btn) return;
+    btn.addEventListener("click", function () {
+      if (typeof window.__toggleTokenPanel === "function") {
+        try { window.__toggleTokenPanel(); }
+        catch (e) { alert("Blad otwierania generatora: " + (e && e.message ? e.message : e)); }
+      } else {
+        alert("Skrypt generatora (modul JS z Supabase) nie zaladowal sie.\n\n" +
+              "Najczestsza przyczyna: VPN, adblocker lub rozszerzenie typu NoScript blokuje cdn.jsdelivr.net.\n\n" +
+              "Sprobuj:\n" +
+              "1. Wylacz VPN i odswiez (Ctrl+Shift+R)\n" +
+              "2. Wylacz adblocker dla tej strony\n" +
+              "3. Otworz w innej przegladarce");
+      }
+    });
+  });
+})();
+</script>
 
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
