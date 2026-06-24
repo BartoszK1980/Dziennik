@@ -3,10 +3,6 @@
   "version": "1.0.0",
   "private": true,
   "description": "Dziennik — static frontend + Vercel serverless MCP server",
-  "type": "module",
-  "scripts": {
-    "build": "echo 'static site + serverless functions, no build step needed'"
-  },
   "dependencies": {
     "@vercel/node": "^3.2.0"
   },
