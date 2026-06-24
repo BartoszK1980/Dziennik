@@ -385,10 +385,61 @@
 
   <div class="top-actions">
     <span class="user-email" id="user-email" hidden></span>
-    <button class="btn primary" id="token-btn">Generuj token API</button>
+    <button class="btn primary" id="token-btn" onclick="window.__toggleTokenPanel && window.__toggleTokenPanel()">Generuj token API</button>
     <button class="btn-link" id="logout-btn" hidden>wyloguj</button>
   </div>
 </header>
+
+<!-- ========================= TOKEN PANEL (inline, no modal) ========================= -->
+<div id="token-panel" style="display:none;background:#fafafa;border-bottom:1px solid #ebebeb;padding:20px 24px;color:#0a0a0a;">
+  <div style="max-width:760px;margin:0 auto;font-family:-apple-system,'Segoe UI','Inter',Roboto,sans-serif;">
+
+    <!-- Stan: niezalogowany -->
+    <div id="token-panel-anon" style="display:none;">
+      <h3 style="margin:0 0 8px;color:#0a0a0a;font-size:18px;">Wymagane logowanie</h3>
+      <p style="color:#444;margin:0 0 12px;font-size:14px;">Żeby wygenerować token API, zaloguj się w aplikacji, potem wróć tu i kliknij ponownie „Generuj token API".</p>
+      <a href="../" style="display:inline-block;padding:10px 18px;background:#0a0a0a;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;margin-right:8px;">Przejdź do logowania →</a>
+      <button onclick="document.getElementById('token-panel').style.display='none'"
+        style="padding:10px 14px;border:1px solid #d4d4d4;background:#fff;color:#0a0a0a;border-radius:8px;cursor:pointer;font:inherit;">Zamknij</button>
+    </div>
+
+    <!-- Stan: zalogowany, formularz -->
+    <div id="token-panel-form" style="display:none;">
+      <h3 style="margin:0 0 8px;color:#0a0a0a;font-size:18px;">Wygeneruj nowy token API</h3>
+      <p style="color:#444;margin:0 0 12px;font-size:14px;">Token będzie miał format <code>dzn_…</code>. Plaintext zobaczysz <strong>tylko raz</strong>.</p>
+      <label for="token-name-input" style="display:block;font-size:12px;color:#666;margin-bottom:4px;">Nazwa</label>
+      <input type="text" id="token-name-input" placeholder="np. claude-desktop" maxlength="60"
+        style="width:100%;max-width:360px;padding:10px 12px;border:1px solid #d4d4d4;border-radius:8px;font:inherit;font-size:14px;color:#0a0a0a;background:#fff;margin-bottom:12px;box-sizing:border-box;display:block;" />
+      <button id="token-gen-btn" onclick="window.__generateToken && window.__generateToken()"
+        style="padding:10px 18px;background:#0a0a0a;color:#fff;border:1px solid #0a0a0a;border-radius:8px;cursor:pointer;font:inherit;font-weight:600;margin-right:8px;">Wygeneruj</button>
+      <button onclick="document.getElementById('token-panel').style.display='none'"
+        style="padding:10px 14px;border:1px solid #d4d4d4;background:#fff;color:#0a0a0a;border-radius:8px;cursor:pointer;font:inherit;">Anuluj</button>
+    </div>
+
+    <!-- Stan: token wygenerowany -->
+    <div id="token-panel-result" style="display:none;">
+      <h3 style="margin:0 0 8px;color:#0a0a0a;font-size:18px;">Token wygenerowany</h3>
+      <p style="color:#c97b8a;font-weight:600;margin:0 0 12px;font-size:14px;">⚠ Zapisz token TERAZ. Nigdy więcej go nie zobaczysz.</p>
+      <p style="color:#444;margin:0 0 6px;font-size:13px;">Nazwa: <code id="token-result-name" style="background:#fff;padding:1px 6px;border:1px solid #ebebeb;border-radius:4px;"></code></p>
+      <div style="background:#0a0a0a;border-radius:8px;padding:12px;margin:8px 0 12px;font-family:ui-monospace,Menlo,monospace;font-size:12px;color:#a5d6a7;word-break:break-all;user-select:all;" id="token-result-value"></div>
+      <button onclick="window.__copyToken && window.__copyToken()"
+        style="padding:10px 14px;border:1px solid #d4d4d4;background:#fff;color:#0a0a0a;border-radius:8px;cursor:pointer;font:inherit;margin-right:8px;" id="token-copy-btn">Kopiuj</button>
+      <button onclick="document.getElementById('token-panel').style.display='none'"
+        style="padding:10px 14px;border:1px solid #0a0a0a;background:#0a0a0a;color:#fff;border-radius:8px;cursor:pointer;font:inherit;font-weight:600;">Zapisałem</button>
+    </div>
+
+    <!-- Stan: blad -->
+    <div id="token-panel-error" style="display:none;">
+      <h3 style="margin:0 0 8px;color:#c97b8a;font-size:18px;">Błąd</h3>
+      <p style="color:#444;margin:0 0 12px;font-size:14px;" id="token-error-msg"></p>
+      <button onclick="document.getElementById('token-panel').style.display='none'"
+        style="padding:10px 14px;border:1px solid #0a0a0a;background:#0a0a0a;color:#fff;border-radius:8px;cursor:pointer;font:inherit;font-weight:600;">OK</button>
+    </div>
+
+    <!-- Stan: ladowanie -->
+    <div id="token-panel-loading" style="display:none;color:#666;font-size:14px;">Generuję token…</div>
+  </div>
+</div>
 
 <!-- ========================= API TAB ========================= -->
 <div class="tab-pane active" id="tab-api">
@@ -904,10 +955,6 @@
   </main>
 </div>
 
-<!-- ========================= MODAL ========================= -->
-<div class="modal-backdrop" id="modal" hidden>
-  <div class="modal" id="modal-content"></div>
-</div>
 
 <script type="module">
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -1013,35 +1060,40 @@ function fillMcpSnippets() {
 }
 fillMcpSnippets();
 
-/* ===== Auth + token generator ===== */
+/* ===== Auth + token generator (inline panel, no modal) ===== */
 const tokenBtn = document.getElementById("token-btn");
 const logoutBtn = document.getElementById("logout-btn");
 const userEmailEl = document.getElementById("user-email");
-const modal = document.getElementById("modal");
-const modalContent = document.getElementById("modal-content");
+const panel = document.getElementById("token-panel");
+const paneAnon = document.getElementById("token-panel-anon");
+const paneForm = document.getElementById("token-panel-form");
+const paneResult = document.getElementById("token-panel-result");
+const paneError = document.getElementById("token-panel-error");
+const paneLoading = document.getElementById("token-panel-loading");
 
-function openModal(html) {
-  modalContent.innerHTML = html;
-  modal.hidden = false;
+function showPane(name) {
+  for (const p of [paneAnon, paneForm, paneResult, paneError, paneLoading]) p.style.display = "none";
+  const el = { anon: paneAnon, form: paneForm, result: paneResult, error: paneError, loading: paneLoading }[name];
+  if (el) el.style.display = "block";
+  panel.style.display = "block";
 }
-function closeModal() {
-  modal.hidden = true;
-  modalContent.innerHTML = "";
-}
-modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
 
 async function refreshUser() {
-  const { data: { session } } = await supabase.auth.getSession();
-  const user = session?.user;
-  if (user) {
-    userEmailEl.textContent = user.email;
-    userEmailEl.hidden = false;
-    logoutBtn.hidden = false;
-    tokenBtn.textContent = "Generuj token API";
-  } else {
-    userEmailEl.hidden = true;
-    logoutBtn.hidden = true;
-    tokenBtn.textContent = "Zaloguj się, żeby wygenerować token";
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
+    if (user) {
+      userEmailEl.textContent = user.email;
+      userEmailEl.hidden = false;
+      logoutBtn.hidden = false;
+      tokenBtn.textContent = "Generuj token API";
+    } else {
+      userEmailEl.hidden = true;
+      logoutBtn.hidden = true;
+      tokenBtn.textContent = "Zaloguj się, żeby wygenerować token";
+    }
+  } catch (e) {
+    console.error("refreshUser:", e);
   }
 }
 refreshUser();
@@ -1051,6 +1103,80 @@ logoutBtn.addEventListener("click", async () => {
   await supabase.auth.signOut();
   refreshUser();
 });
+
+/* ===== Funkcje wystawione na window dla onclick="" w HTML ===== */
+
+window.__toggleTokenPanel = async function () {
+  // toggle: jak panel widoczny -> ukryj; jak nie -> pokaz odpowiedni stan
+  if (panel.style.display !== "none" && panel.style.display !== "") {
+    panel.style.display = "none";
+    return;
+  }
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      showPane("anon");
+    } else {
+      document.getElementById("token-name-input").value = "";
+      showPane("form");
+      setTimeout(() => document.getElementById("token-name-input").focus(), 0);
+    }
+  } catch (e) {
+    document.getElementById("token-error-msg").textContent =
+      "Nie udało się sprawdzić sesji: " + (e?.message || e);
+    showPane("error");
+  }
+};
+
+let __lastToken = "";
+
+window.__generateToken = async function () {
+  const name = document.getElementById("token-name-input").value.trim() || "Token bez nazwy";
+  const btn = document.getElementById("token-gen-btn");
+  if (btn) { btn.disabled = true; btn.textContent = "Generuję…"; }
+  showPane("loading");
+
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      showPane("anon");
+      return;
+    }
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/create-api-token`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+
+    __lastToken = data.token;
+    document.getElementById("token-result-name").textContent = data.name;
+    document.getElementById("token-result-value").textContent = data.token;
+    showPane("result");
+  } catch (err) {
+    document.getElementById("token-error-msg").textContent = err?.message || String(err);
+    showPane("error");
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = "Wygeneruj"; }
+  }
+};
+
+window.__copyToken = async function () {
+  if (!__lastToken) return;
+  try {
+    await navigator.clipboard.writeText(__lastToken);
+    const b = document.getElementById("token-copy-btn");
+    const orig = b.textContent;
+    b.textContent = "Skopiowano ✓";
+    setTimeout(() => { b.textContent = orig; }, 1500);
+  } catch {
+    alert("Nie udało się skopiować automatycznie — zaznacz token i Ctrl+C.");
+  }
+};
 
 tokenBtn.addEventListener("click", async () => {
   try {
