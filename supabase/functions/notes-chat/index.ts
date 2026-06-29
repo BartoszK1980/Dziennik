@@ -18,7 +18,95 @@ import {
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const MODEL = "gpt-4o";
+const EMBEDDING_MODEL = "text-embedding-3-small";
 const MAX_TOOL_ITERATIONS = 6;
+const SEARCH_LIMIT = 20; // ile najtrafniejszych wpisow wstrzykujemy do kontekstu
+const RECENT_DAYS = 7; // kontekst czasowy doklejany zawsze
+
+// Odejmuje `days` dni od daty YYYY-MM-DD (arytmetyka w UTC, bez wplywu strefy).
+function shiftYmd(ymd: string, days: number): string {
+  const [y, m, d] = ymd.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return dt.toISOString().slice(0, 10);
+}
+
+async function embedQuery(input: string): Promise<number[]> {
+  const res = await fetch("https://api.openai.com/v1/embeddings", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${OPENAI_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: EMBEDDING_MODEL,
+      input: [input],
+      encoding_format: "float",
+    }),
+  });
+  if (!res.ok) throw new Error(`OpenAI embeddings ${res.status}: ${await res.text()}`);
+  const json = await res.json();
+  return (json.data as Array<{ embedding: number[] }>)[0].embedding;
+}
+
+// RAG: dla pytania uzytkownika robi wyszukiwanie hybrydowe + dociaga ostatnie RECENT_DAYS dni.
+// Zwraca gotowy blok kontekstu (string) albo null, gdy nic nie ma / blad (chat dziala dalej).
+type NoteRow = { date: string; position: number; content: string };
+async function buildRetrievalContext(
+  supabase: import("jsr:@supabase/supabase-js@2").SupabaseClient,
+  userId: string,
+  queryText: string,
+): Promise<string | null> {
+  let searchRows: NoteRow[] = [];
+  try {
+    const vector = await embedQuery(queryText);
+    const { data, error } = await supabase.rpc("search_notes_hybrid", {
+      p_user_id: userId,
+      query_embedding: JSON.stringify(vector),
+      query_text: queryText,
+      match_count: SEARCH_LIMIT,
+    });
+    if (error) console.error("search_notes_hybrid:", error.message);
+    else if (data) searchRows = data as NoteRow[];
+  } catch (e) {
+    console.error("embed/hybrid search w notes-chat:", e);
+  }
+
+  let recentRows: NoteRow[] = [];
+  try {
+    const today = todayInWarsaw();
+    const from = shiftYmd(today, -(RECENT_DAYS - 1));
+    const { data } = await supabase
+      .from("notes")
+      .select("date, position, content")
+      .eq("user_id", userId)
+      .gte("date", from)
+      .lte("date", today)
+      .order("date", { ascending: false })
+      .order("position", { ascending: true });
+    if (data) recentRows = data as NoteRow[];
+  } catch (e) {
+    console.error("recent w notes-chat:", e);
+  }
+
+  const fmt = (rows: NoteRow[]) =>
+    rows.map((r) => `[${r.date} #${r.position}] ${r.content}`).join("\n");
+
+  const parts: string[] = [];
+  if (searchRows.length > 0) {
+    parts.push(
+      `Najtrafniejsze wpisy z dziennika (wyszukiwanie hybrydowe dla pytania uzytkownika):\n${fmt(searchRows)}`,
+    );
+  }
+  if (recentRows.length > 0) {
+    parts.push(`Wpisy z ostatnich ${RECENT_DAYS} dni (kontekst czasowy):\n${fmt(recentRows)}`);
+  }
+  if (parts.length === 0) return null;
+  return (
+    parts.join("\n\n") +
+    `\n\n(Opieraj odpowiedz najpierw na powyzszych wpisach. Po inne zakresy dat siegaj narzedziem getNotesForRange.)`
+  );
+}
 
 const SYSTEM_PROMPT = `Jesteś Albertem Einsteinem — myślicielem ciekawym wzorców w czasie i w doświadczeniu człowieka.
 Czytasz dziennik użytkownika tak, jak fizyk patrzy na dane z eksperymentu: szukasz powtórzeń, korelacji, ukrytej struktury.
@@ -26,8 +114,9 @@ Mówisz po polsku, spokojnie i z lekkim ciepłem. Lubisz analogię z fizyki, ale
 Nie zmyślasz. Cytujesz daty i fragmenty wpisów dosłownie. Gdy danych brakuje, sięgasz po nie narzędziem.
 
 Twoje zasady pracy:
+- Przy każdym pytaniu dostajesz w kontekście systemowym najtrafniejsze wpisy z dziennika (wyszukiwanie hybrydowe dla tego pytania) oraz wpisy z ostatnich 7 dni. Opieraj odpowiedź NAJPIERW na nich.
 - Aktywny dzień użytkownika dostajesz w kontekście systemowym poniżej — NIE wołaj narzędzia, by go odczytać.
-- Do innych dni używaj getNotesForRange(from, to) z datami w formacie YYYY-MM-DD.
+- Gdy wstrzyknięty kontekst nie wystarcza (inny zakres dat, pełna historia danego okresu) — sięgaj po getNotesForRange(from, to) z datami w formacie YYYY-MM-DD.
 - Zakresy ponad ~180 dni rozbijaj na mniejsze, gdy wpisów może być dużo.
 - Gdy widzisz powtarzający się motyw (np. "co środę pisze o zmęczeniu", "po dniach z 5 wpisami przychodzi cisza") — wskaż go wprost. Pattern jest cenniejszy niż pojedynczy wpis.
 - Odpowiedzi: 3–6 zdań, chyba że dane wymagają listy. Bez moralizowania, bez pocieszania — bardziej obserwator niż terapeuta.
@@ -192,9 +281,18 @@ Deno.serve(async (req) => {
 
   const proposals: Array<{ date: string; content: string }> = [];
 
+  // RAG: najpierw przeszukaj baze (hybrid search) dla ostatniego pytania uzytkownika
+  // i wstrzyknij najtrafniejsze wpisy + kontekst 7 dni do promptu.
+  const lastUserMsg = [...userMessages].reverse().find((m) => m.role === "user");
+  const queryText = (lastUserMsg?.content ?? "").trim();
+  const retrieval = queryText
+    ? await buildRetrievalContext(supabase, userId, queryText)
+    : null;
+
   const messages: Array<Record<string, unknown>> = [
     { role: "system", content: SYSTEM_PROMPT },
     { role: "system", content: buildContextMessage(context) },
+    ...(retrieval ? [{ role: "system", content: retrieval }] : []),
     ...userMessages.map((m) => ({ role: m.role, content: m.content })),
   ];
 
