@@ -1,5 +1,5 @@
 // Edge Function: notes-chat
-// xAI Grok via OpenAI-compatible API + tool-call loop.
+// OpenAI (gpt-4o) chat completions + tool-call loop.
 // Tools: getNotesForRange (reads notes via RLS/explicit filter), proposeNote (queues a proposal).
 //
 // Akceptuje dwa ksztalty body:
@@ -16,8 +16,8 @@ import {
   todayInWarsaw,
 } from "../_shared/auth.ts";
 
-const XAI_API_KEY = Deno.env.get("XAI_API_KEY");
-const MODEL = "grok-3";
+const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+const MODEL = "gpt-4o";
 const MAX_TOOL_ITERATIONS = 6;
 
 const SYSTEM_PROMPT = `Jesteś Albertem Einsteinem — myślicielem ciekawym wzorców w czasie i w doświadczeniu człowieka.
@@ -92,11 +92,11 @@ Wpisy z aktywnego dnia:
 ${notesBlock}`;
 }
 
-async function callXAI(messages: unknown[]) {
-  const res = await fetch("https://api.x.ai/v1/chat/completions", {
+async function callLLM(messages: unknown[]) {
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${XAI_API_KEY}`,
+      Authorization: `Bearer ${OPENAI_API_KEY}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -109,7 +109,7 @@ async function callXAI(messages: unknown[]) {
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`xAI ${res.status}: ${text}`);
+    throw new Error(`OpenAI ${res.status}: ${text}`);
   }
   return await res.json();
 }
@@ -121,9 +121,9 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") {
     return jsonResponse({ error: "Method not allowed" }, 405);
   }
-  if (!XAI_API_KEY) {
+  if (!OPENAI_API_KEY) {
     return jsonResponse(
-      { error: "Brak sekretu XAI_API_KEY w Edge Function." },
+      { error: "Brak sekretu OPENAI_API_KEY w Edge Function." },
       500,
     );
   }
@@ -201,9 +201,9 @@ Deno.serve(async (req) => {
   for (let iter = 0; iter < MAX_TOOL_ITERATIONS; iter++) {
     let completion;
     try {
-      completion = await callXAI(messages);
+      completion = await callLLM(messages);
     } catch (e) {
-      console.error("xAI error:", e);
+      console.error("OpenAI error:", e);
       return jsonResponse(
         { error: `Asystent jest chwilowo niedostepny: ${(e as Error).message}` },
         502,
