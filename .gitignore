@@ -18,3 +18,9 @@ build/
 
 # Skill credentials (zawiera sb_secret_* — nigdy nie commitować)
 .claude/skills/*/credentials.local.json
+
+# Lokalne dane importu / seed (jednorazowe skrypty i eksporty wpisów)
+batch_*.sql
+insert_*.sql
+entries_*.txt
+entries_all.json
