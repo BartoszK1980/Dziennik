@@ -522,6 +522,64 @@
     padding: 18px 8px;
     font-size: 14px;
   }
+  .search-results { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .search-section-title {
+    margin-top: 18px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    border-top: 1px solid var(--bg-soft);
+    padding-top: 14px;
+  }
+  .search-result {
+    border: 1px solid var(--bg-soft);
+    border-radius: 12px;
+    padding: 10px 12px;
+    background: #fff;
+    cursor: pointer;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .search-result:hover {
+    border-color: var(--accent);
+    box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+  }
+  .search-result .meta {
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-bottom: 5px;
+    text-transform: capitalize;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .search-result .content {
+    font-size: 14px;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    color: var(--ink);
+  }
+  .search-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 999px;
+    text-transform: none;
+    letter-spacing: .02em;
+  }
+  .search-badge.vec { background: #e8f0ff; color: #2b5fd0; }
+  .search-badge.kw  { background: #eaf7ec; color: #2e8b46; }
+  #search-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    border: 1px solid var(--bg-soft);
+    border-radius: 12px;
+    font: inherit;
+    color: var(--ink);
+  }
   .proposal-card {
     border: 1px dashed var(--accent);
     border-radius: 14px;
@@ -593,6 +651,7 @@
   <nav class="tabs" id="tabs" hidden>
     <button data-tab="today" class="active">Dziś</button>
     <button data-tab="calendar">Kalendarz</button>
+    <button data-tab="search">Szukaj</button>
     <button data-tab="chat">Asystent</button>
     <button data-tab="settings">Ustawienia</button>
   </nav>
@@ -626,6 +685,7 @@ const state = {
   authInfo: null,
   authBusy: false,
   chat: { messages: [], proposals: [], busy: false, error: null },
+  search: { query: "", results: [], recent: [], busy: false, error: null, done: false },
 };
 
 function loadSettings() {
@@ -809,6 +869,7 @@ function render() {
 
   if (state.tab === "today")    renderDay(ymd(new Date()));
   if (state.tab === "calendar") renderCalendar();
+  if (state.tab === "search")   renderSearch();
   if (state.tab === "chat")     renderChat();
   if (state.tab === "settings") renderSettings();
   if (state.tab === "day")      renderDay(state.viewingDate || ymd(new Date()));
@@ -1113,6 +1174,118 @@ function renderSettings() {
   document.getElementById("settings-logout").addEventListener("click", async () => {
     await window.supabase.auth.signOut();
   });
+}
+
+function renderSearch() {
+  const s = state.search;
+
+  let resultsHtml;
+  if (s.busy) {
+    resultsHtml = `<div class="typing">Szukam…</div>`;
+  } else if (s.error) {
+    resultsHtml = `<div class="chat-bubble system-error">${escapeHtml(s.error)}</div>`;
+  } else if (s.done && s.results.length === 0) {
+    resultsHtml = `<div class="chat-empty">Brak pasujących wpisów dla „${escapeHtml(s.query)}”.</div>`;
+  } else if (s.results.length > 0) {
+    resultsHtml = s.results.map(r => {
+      const badges = [
+        r.in_vec ? `<span class="search-badge vec">semantyczne</span>` : "",
+        r.in_kw ? `<span class="search-badge kw">słowo kluczowe</span>` : "",
+      ].join("");
+      return `
+        <div class="search-result" data-date="${r.date}">
+          <div class="meta">${formatDateLong(r.date)} ${badges}</div>
+          <div class="content">${escapeHtml(r.content)}</div>
+        </div>`;
+    }).join("");
+  } else {
+    resultsHtml = `<div class="chat-empty">Wpisz frazę, żeby przeszukać dziennik. Łączymy wyszukiwanie semantyczne (sens) z dopasowaniem słów.</div>`;
+  }
+
+  // Kontekst czasowy: zawsze pokazujemy wpisy z ostatnich 7 dni pod wynikami.
+  let recentHtml = "";
+  if (s.done && !s.busy && !s.error && s.recent.length > 0) {
+    const items = s.recent.map(r => `
+      <div class="search-result" data-date="${r.date}">
+        <div class="meta">${formatDateLong(r.date)}</div>
+        <div class="content">${escapeHtml(r.content)}</div>
+      </div>`).join("");
+    recentHtml = `
+      <div class="search-section-title">Ostatnie 7 dni · kontekst</div>
+      <div class="search-results">${items}</div>`;
+  }
+
+  view.innerHTML = `
+    <div class="card">
+      <div class="day-header">
+        <h2>Szukaj w dzienniku</h2>
+        ${s.results.length > 0 ? `<span class="counter">${s.results.length} wyników</span>` : ""}
+      </div>
+      <div class="composer">
+        <input id="search-input" type="text" maxlength="200"
+          placeholder="Np. „kiedy źle spałem” albo „spotkania z przyjaciółmi”"
+          value="${escapeHtml(s.query)}" />
+        <div class="composer-row">
+          <span class="char-count"></span>
+          <button class="primary" id="search-go" ${s.busy ? "disabled" : ""}>${s.busy ? "Szukam…" : "Szukaj"}</button>
+        </div>
+      </div>
+      <div class="search-results">${resultsHtml}</div>
+      ${recentHtml}
+    </div>
+  `;
+
+  const input = document.getElementById("search-input");
+  const go = document.getElementById("search-go");
+  go.addEventListener("click", () => runSearch(input.value));
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); go.click(); }
+  });
+
+  view.querySelectorAll(".search-result[data-date]").forEach(el => {
+    el.addEventListener("click", () => {
+      state.viewingDate = el.dataset.date;
+      state.tab = "day";
+      render();
+    });
+  });
+
+  if (!s.query) input.focus();
+}
+
+async function runSearch(text) {
+  const query = (text || "").trim();
+  const s = state.search;
+  s.query = query;
+  if (!query) { s.results = []; s.done = false; s.error = null; render(); return; }
+  if (s.busy) return;
+
+  s.busy = true;
+  s.error = null;
+  render();
+
+  try {
+    const res = await fetch(`${SUPABASE_URL_CONST}/functions/v1/search-notes`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${state.session.access_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ query, limit: 30 }),
+    });
+    const payload = await res.json();
+    if (!res.ok) throw new Error(payload?.error || `HTTP ${res.status}`);
+    s.results = payload.results || [];
+    s.recent = payload.recent || [];
+  } catch (err) {
+    s.error = `Wyszukiwanie chwilowo niedostępne: ${err.message}`;
+    s.results = [];
+    s.recent = [];
+  } finally {
+    s.busy = false;
+    s.done = true;
+    render();
+  }
 }
 
 function renderChat() {
